@@ -2,101 +2,120 @@
 pragma solidity =0.8.18;
 
 library LibUint256ArraySlow {
-    function arrayFromSlow(uint256 a_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](1);
-        array_[0] = a_;
-        return array_;
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](1);
+        array[0] = a;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](2);
-        array_[0] = a_;
-        array_[1] = b_;
-        return array_;
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](2);
+        array[0] = a;
+        array[1] = b;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_, uint256 c_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](3);
-        array_[0] = a_;
-        array_[1] = b_;
-        array_[2] = c_;
-        return array_;
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256 c) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](3);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_, uint256 c_, uint256 d_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](4);
-        array_[0] = a_;
-        array_[1] = b_;
-        array_[2] = c_;
-        array_[3] = d_;
-        return array_;
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256 c, uint256 d) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](4);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
+        array[3] = d;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_, uint256 c_, uint256 d_, uint256 e_)
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e)
         internal
         pure
         returns (uint256[] memory)
     {
-        uint256[] memory array_ = new uint256[](5);
-        array_[0] = a_;
-        array_[1] = b_;
-        array_[2] = c_;
-        array_[3] = d_;
-        array_[4] = e_;
-        return array_;
+        uint256[] memory array = new uint256[](5);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
+        array[3] = d;
+        array[4] = e;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_, uint256 c_, uint256 d_, uint256 e_, uint256 f_)
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f)
         internal
         pure
         returns (uint256[] memory)
     {
-        uint256[] memory array_ = new uint256[](6);
-        array_[0] = a_;
-        array_[1] = b_;
-        array_[2] = c_;
-        array_[3] = d_;
-        array_[4] = e_;
-        array_[5] = f_;
-        return array_;
+        uint256[] memory array = new uint256[](6);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
+        array[3] = d;
+        array[4] = e;
+        array[5] = f;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256[] memory tail_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](tail_.length + 1);
-        array_[0] = a_;
-        for (uint256 i_ = 0; i_ < tail_.length; i_++) {
-            array_[i_ + 1] = tail_[i_];
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256[] memory tail) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](tail.length + 1);
+        array[0] = a;
+        for (uint256 i = 0; i < tail.length; i++) {
+            array[i + 1] = tail[i];
         }
-        return array_;
+        return array;
     }
 
-    function arrayFromSlow(uint256 a_, uint256 b_, uint256[] memory tail_) internal pure returns (uint256[] memory) {
-        uint256[] memory array_ = new uint256[](tail_.length + 2);
-        array_[0] = a_;
-        array_[1] = b_;
-        for (uint256 i_ = 0; i_ < tail_.length; i_++) {
-            array_[i_ + 2] = tail_[i_];
+    /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256[] memory tail) internal pure returns (uint256[] memory) {
+        uint256[] memory array = new uint256[](tail.length + 2);
+        array[0] = a;
+        array[1] = b;
+        for (uint256 i = 0; i < tail.length; i++) {
+            array[i + 2] = tail[i];
         }
-        return array_;
+        return array;
     }
 
-    function truncateSlow(uint256[] memory a_, uint256 newLength_) internal pure returns (uint256[] memory) {
-        uint256[] memory b_ = new uint256[](newLength_);
-        for (uint256 i_ = 0; i_ < newLength_; i_++) {
-            b_[i_] = a_[i_];
+    /// Slow implementation of truncate for testing purposes.
+    function truncateSlow(uint256[] memory a, uint256 newLength) internal pure returns (uint256[] memory) {
+        uint256[] memory b = new uint256[](newLength);
+        for (uint256 i = 0; i < newLength; i++) {
+            b[i] = a[i];
         }
-        return b_;
+        return b;
     }
 
-    function extendSlow(uint256[] memory a_, uint256[] memory b_) internal pure returns (uint256[] memory) {
-        uint256[] memory c_ = new uint256[](a_.length + b_.length);
-        uint256 i_ = 0;
-        for (; i_ < a_.length; i_++) {
-            c_[i_] = a_[i_];
+    /// Slow implementation of extend for testing purposes.
+    function extendSlow(uint256[] memory a, uint256[] memory b) internal pure returns (uint256[] memory) {
+        uint256[] memory c = new uint256[](a.length + b.length);
+        uint256 i = 0;
+        for (; i < a.length; i++) {
+            c[i] = a[i];
         }
-        for (; i_ < a_.length + b_.length; i_++) {
-            c_[i_] = b_[i_ - a_.length];
+        for (; i < a.length + b.length; i++) {
+            c[i] = b[i - a.length];
         }
-        return c_;
+        return c;
+    }
+
+    /// Slow implementation of reverse for testing purposes.
+    function reverseSlow(uint256[] memory a) internal pure returns (uint256[] memory) {
+        uint256[] memory b = new uint256[](a.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            b[i] = a[a.length - i - 1];
+        }
+        return b;
     }
 }

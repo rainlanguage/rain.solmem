@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: CAL
 pragma solidity ^0.8.18;
 
-import "./LibMemCpy.sol";
-
-/// Thrown if a truncated length is longer than the array being truncated. It is
-/// not possible to truncate something and increase its length as the memory
-/// region after the array MAY be allocated for something else already.
-error OutOfBoundsTruncate(uint256 arrayLength, uint256 truncatedLength);
+import {Pointer} from "./LibPointer.sol";
+import {LibMemCpy} from "./LibMemCpy.sol";
+import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
 
 /// @title Uint256Array
 /// @notice Things we want to do carefully and efficiently with uint256 arrays
@@ -313,6 +310,28 @@ library LibUint256Array {
             }
 
             extended := extendInline(b, e)
+        }
+    }
+
+    /// Reverse an array in place. This is a destructive operation that MUTATES
+    /// the array in place. There is no return value.
+    /// @param array The array to reverse.
+    function reverse(uint256[] memory array) internal pure {
+        assembly ("memory-safe") {
+            for {
+                let left := add(array, 0x20)
+                // Right points at the last item in the array. Which is the
+                // length number of items from the length.
+                let right := add(array, mul(mload(array), 0x20))
+            } lt(left, right) {
+                left := add(left, 0x20)
+                right := sub(right, 0x20)
+            } {
+                let leftValue := mload(left)
+                let rightValue := mload(right)
+                mstore(left, rightValue)
+                mstore(right, leftValue)
+            }
         }
     }
 }

@@ -1,32 +1,32 @@
 // SPDX-License-Identifier: CAL
 pragma solidity =0.8.18;
 
-import "forge-std/Test.sol";
-import "src/lib/LibUint256Array.sol";
-import "src/lib/LibMemory.sol";
-
-import "test/lib/LibUint256ArraySlow.sol";
+import {Test} from "forge-std/Test.sol";
+import {LibUint256Array} from "src/lib/LibUint256Array.sol";
+import {LibMemory} from "src/lib/LibMemory.sol";
+import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
+import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayTruncateTest is Test {
-    function testTruncate(uint256[] memory a_, uint256 newLength_) public {
-        vm.assume(newLength_ <= a_.length);
-        uint256[] memory b_ = new uint256[](a_.length);
-        for (uint256 i_ = 0; i_ < a_.length; i_++) {
-            b_[i_] = a_[i_];
+    function testTruncate(uint256[] memory a, uint256 newLength) public {
+        vm.assume(newLength <= a.length);
+        uint256[] memory b = new uint256[](a.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            b[i] = a[i];
         }
-        assertEq(a_, b_);
+        assertEq(a, b);
 
-        LibUint256Array.truncate(a_, newLength_);
+        LibUint256Array.truncate(a, newLength);
         assertTrue(LibMemory.memoryIsAligned());
 
-        b_ = LibUint256ArraySlow.truncateSlow(b_, newLength_);
-        assertEq(a_, b_);
+        b = LibUint256ArraySlow.truncateSlow(b, newLength);
+        assertEq(a, b);
     }
 
-    function testTruncateError(uint256[] memory a_, uint256 newLength_) public {
-        vm.assume(newLength_ > a_.length);
-        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, a_.length, newLength_));
-        LibUint256Array.truncate(a_, newLength_);
+    function testTruncateError(uint256[] memory a, uint256 newLength) public {
+        vm.assume(newLength > a.length);
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, a.length, newLength));
+        LibUint256Array.truncate(a, newLength);
     }
 
     function testTruncateGas0() public pure {
