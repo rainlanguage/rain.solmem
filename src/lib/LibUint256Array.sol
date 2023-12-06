@@ -328,8 +328,7 @@ library LibUint256Array {
                 right := sub(right, 0x20)
             } {
                 let leftValue := mload(left)
-                let rightValue := mload(right)
-                mstore(left, rightValue)
+                mstore(left, mload(right))
                 mstore(right, leftValue)
             }
         }
