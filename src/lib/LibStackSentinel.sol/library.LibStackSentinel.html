@@ -1,0 +1,310 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>LibStackSentinel</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../book.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../../index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item "><a href="../../../src/error/index.html">❱ error</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/error/ErrUint256Array.sol/error.OutOfBoundsTruncate.html">OutOfBoundsTruncate</a></li></ol></li><li class="chapter-item expanded "><a href="../../../src/lib/index.html">❱ lib</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/lib/LibBytes.sol/error.TruncateError.html">TruncateError</a></li><li class="chapter-item "><a href="../../../src/lib/LibBytes.sol/library.LibBytes.html">LibBytes</a></li><li class="chapter-item "><a href="../../../src/lib/LibMemCpy.sol/library.LibMemCpy.html">LibMemCpy</a></li><li class="chapter-item "><a href="../../../src/lib/LibMemory.sol/library.LibMemory.html">LibMemory</a></li><li class="chapter-item "><a href="../../../src/lib/LibPointer.sol/type.Pointer.html">Pointer</a></li><li class="chapter-item "><a href="../../../src/lib/LibPointer.sol/library.LibPointer.html">LibPointer</a></li><li class="chapter-item "><a href="../../../src/lib/LibStackPointer.sol/error.UnalignedStackPointer.html">UnalignedStackPointer</a></li><li class="chapter-item "><a href="../../../src/lib/LibStackPointer.sol/library.LibStackPointer.html">LibStackPointer</a></li><li class="chapter-item "><a href="../../../src/lib/LibStackSentinel.sol/error.MissingSentinel.html">MissingSentinel</a></li><li class="chapter-item "><a href="../../../src/lib/LibStackSentinel.sol/type.Sentinel.html">Sentinel</a></li><li class="chapter-item expanded "><a href="../../../src/lib/LibStackSentinel.sol/library.LibStackSentinel.html" class="active">LibStackSentinel</a></li><li class="chapter-item "><a href="../../../src/lib/LibUint256Array.sol/library.LibUint256Array.html">LibUint256Array</a></li><li class="chapter-item "><a href="../../../src/lib/LibUint256Matrix.sol/library.LibUint256Matrix.html">LibUint256Matrix</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/rainlanguage/rain.solmem" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="libstacksentinel"><a class="header" href="#libstacksentinel">LibStackSentinel</a></h1>
+<p><a href="https://github.com/rainlanguage/rain.solmem/blob/d645551663bcf97a27149064f2380eb929e392f8/src/lib/LibStackSentinel.sol">Git Source</a></p>
+<p>Rainlang has no dynamic list data type as every stack item MUST be explicit
+in the structure of the code itself. While it would be possible for users to
+manually code length prefixes into the stack, this would be error prone and
+generally hostile to the overall DX. Instead we can allow sentinels as an
+option that is merely awkward rather than downright pathological.
+Rainlang authors can use a single sentinel value that is constant across all
+their expressions rather than a calculated length prefix. This value can even
+be aliased in onchain metadata and referenced by name for ease of use. The
+calling contract defines and consumes sentinels, so the expression author
+does not need to be aware of or have control over any subtleties in choice of
+sentinel.
+The main tradeoffs for sentinel terminated lists on a stack are similar to
+null-terminated strings,
+as per <a href="https://en.wikipedia.org/wiki/Null-terminated_string">Wikipedia</a></p>
+<blockquote>
+<p>While simple to implement, this representation has been prone to errors and
+performance problems.
+This library attempts to mitigate potential implementation errors with a
+standard implementation that has been fuzzed and optimized for building lists
+of tuples (and therefore lists of structs via. a direct type cast). The main
+implementation issues in null-terminated strings are avoided:</p>
+</blockquote>
+<ul>
+<li>Using any sentinel value other than <code>0</code>, such as the hash of some well
+known string, will avoid misinterpreting unallocated memory as a sentinel.</li>
+<li>Any underflows manifest as either a &quot;missing sentinel&quot; or infinite loop,
+which will revert either way due to an explicit check or gas limits.</li>
+<li>Given that a sentinel is <code>uint256</code> it is possible to construct a value that
+is very unlikely to collide with real values in the implementation domain.</li>
+<li>Well behaved integrity checks will ensure the memory for the sentinel is
+allocated as any other stack item.
+Sadly there is no way to avoid the O(n) performance overhead of searching for
+a sentinel vs. O(1) of reading a length prefix directly. This is somewhat
+mitigated by the nature of a hand-written stack being small in
+computing terms, and that each item being iterated over is an entire struct
+rather than individual stack values. Assembly is used to keep the looping
+overhead to a minimum.</li>
+</ul>
+<h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
+<h3 id="consumesentineltuples"><a class="header" href="#consumesentineltuples">consumeSentinelTuples</a></h3>
+<p>Given two stack pointers that bound a stack build an array of <code>n</code> item
+tuples above the given sentinel value. The sentinel will be skipped and
+a pointer below it returned alongside the tuples list.
+The tuples can be cast (via assembly) to structs.
+The caller MUST consider the region of memory consumed for the structs as
+mutated/truncated/deallocated and reallocated insitu to the tuples.
+The sentinel MUST be chosen to have a negligible chance of colliding with
+a real value in the array, otherwise an intended array item will be
+interpreted as a sentinel.
+If the sentinel is absent in the stack this WILL REVERT. The intent is
+to represent dynamic length arrays without forcing expression authors to
+calculate lengths on the stack. If the expression author wants to model
+an empty/optional/absent value they MAY provided a sentinel for a zero
+length array and the calling contract SHOULD handle this.
+If <code>lower</code> is smaller than <code>n</code> it is possible that this will underflow
+which will result in the evm immediately running out of gas as it
+attempts to loop from infinity. There is no explicit underflow check but
+there is no way to underflow without reverting due to gas.</p>
+<pre><code class="language-solidity">function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
+    internal
+    pure
+    returns (Pointer sentinelPointer, Pointer tuplesPointer);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>lower</code></td><td><code>Pointer</code></td><td>Pointer to the bottom of the stack range.</td></tr>
+<tr><td><code>upper</code></td><td><code>Pointer</code></td><td>Pointer to the top of the stack range.</td></tr>
+<tr><td><code>sentinel</code></td><td><code>Sentinel</code></td><td>The value to expect as the sentinel. MUST be present in the stack or <code>consumeSentinel</code> will revert. MUST NOT collide with valid stack items (or be cryptographically improbable to do so).</td></tr>
+<tr><td><code>n</code></td><td><code>uint256</code></td><td>The number of items per tuple.</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>sentinelPointer</code></td><td><code>Pointer</code></td><td>Pointer to the sentinel that was found. A missing sentinel WILL REVERT.</td></tr>
+<tr><td><code>tuplesPointer</code></td><td><code>Pointer</code></td><td>Pointer to the n-item tuples array that was built.</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../src/lib/LibStackSentinel.sol/type.Sentinel.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../src/lib/LibUint256Array.sol/library.LibUint256Array.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../src/lib/LibStackSentinel.sol/type.Sentinel.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../src/lib/LibUint256Array.sol/library.LibUint256Array.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>
