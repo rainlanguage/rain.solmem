@@ -48,4 +48,21 @@ library LibUint256MatrixSlow {
         matrix[2] = c;
         return matrix;
     }
+
+    function flattenSlow(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
+        uint256 length = 0;
+        for (uint256 i = 0; i < matrix.length; i++) {
+            length += matrix[i].length;
+        }
+
+        uint256[] memory array = new uint256[](length);
+        uint256 k = 0;
+        for (uint256 i = 0; i < matrix.length; i++) {
+            for (uint256 j = 0; j < matrix[i].length; j++) {
+                array[k] = matrix[i][j];
+                k++;
+            }
+        }
+        return array;
+    }
 }
