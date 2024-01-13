@@ -98,6 +98,13 @@ library LibUint256Matrix {
         }
     }
 
+    /// Allocates and builds a new `uint256[]` from a `uint256[][]`. This is
+    /// potentially memory intensive and expensive, but there's no way around
+    /// the allocation if a flat array is needed. This is because 2-dimensional
+    /// arrays are stored as a length-prefixed array of pointers to 1-dimensional
+    /// arrays, not as a contiguous block of memory.
+    /// @param matrix The matrix to flatten.
+    /// @return array The flattened array.
     function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
         uint256[] memory array;
         assembly ("memory-safe") {
