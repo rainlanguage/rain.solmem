@@ -49,6 +49,14 @@ library LibUint256MatrixSlow {
         return matrix;
     }
 
+    function itemCountSlow(uint256[][] memory matrix) internal pure returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < matrix.length; i++) {
+            count += matrix[i].length;
+        }
+        return count;
+    }
+
     function flattenSlow(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
         uint256 length = 0;
         for (uint256 i = 0; i < matrix.length; i++) {
