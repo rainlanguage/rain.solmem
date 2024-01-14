@@ -10,9 +10,6 @@ contract LibUint256MatrixItemCountTest is Test {
     using LibUint256MatrixSlow for uint256[][];
 
     function testItemCountReference(uint256[][] memory matrix) external {
-        assertEq(
-            matrix.itemCount(),
-            matrix.itemCountSlow()
-        );
+        assertEq(matrix.itemCount(), matrix.itemCountSlow());
     }
 }
