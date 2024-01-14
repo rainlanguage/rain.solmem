@@ -97,4 +97,43 @@ library LibUint256Matrix {
             mstore(0x40, add(matrix, 0x80))
         }
     }
+
+    /// Allocates and builds a new `uint256[]` from a `uint256[][]`. This is
+    /// potentially memory intensive and expensive, but there's no way around
+    /// the allocation if a flat array is needed. This is because 2-dimensional
+    /// arrays are stored as a length-prefixed array of pointers to 1-dimensional
+    /// arrays, not as a contiguous block of memory.
+    /// @param matrix The matrix to flatten.
+    /// @return array The flattened array.
+    function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
+        uint256[] memory array;
+        assembly ("memory-safe") {
+            let length := 0
+            let cursor := add(matrix, 0x20)
+            let end := add(cursor, mul(mload(matrix), 0x20))
+
+            for {} lt(cursor, end) {} {
+                length := add(length, mload(mload(cursor)))
+                cursor := add(cursor, 0x20)
+            }
+
+            array := mload(0x40)
+            mstore(0x40, add(array, add(0x20, mul(length, 0x20))))
+            mstore(array, length)
+
+            cursor := add(matrix, 0x20)
+            let arrayCursor := add(array, 0x20)
+            for {} lt(cursor, end) {} {
+                let itemCursor := add(mload(cursor), 0x20)
+                let itemEnd := add(itemCursor, mul(mload(mload(cursor)), 0x20))
+                for {} lt(itemCursor, itemEnd) {} {
+                    mstore(arrayCursor, mload(itemCursor))
+                    arrayCursor := add(arrayCursor, 0x20)
+                    itemCursor := add(itemCursor, 0x20)
+                }
+                cursor := add(cursor, 0x20)
+            }
+        }
+        return array;
+    }
 }
