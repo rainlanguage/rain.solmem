@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: CAL
-pragma solidity =0.8.18;
+pragma solidity =0.8.25;
 
 library LibUint256MatrixSlow {
     function compareMatrices(uint256[][] memory a, uint256[][] memory b, uint256 expectedLength_)

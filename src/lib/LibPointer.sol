@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: CAL
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.25;
 
 /// A pointer to a location in memory. This is a `uint256` to save gas on low
 /// level operations on the evm stack. These same low level operations typically

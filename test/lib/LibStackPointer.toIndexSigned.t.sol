@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: CAL
-pragma solidity =0.8.18;
+pragma solidity =0.8.25;
 
 import "forge-std/Test.sol";
 
@@ -15,9 +15,11 @@ contract LibStackPointerToIndexSignedTest is Test {
     /// Test that positive indexes are converted correctly.
     function testUnsafeToIndexPositive(Pointer lower, Pointer upper) public {
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0, type(uint256).max));
-        vm.assume(Pointer.unwrap(lower) % 0x20 == 0);
+        lower = Pointer.wrap(Pointer.unwrap(lower) - (Pointer.unwrap(lower) % 0x20));
+
         upper = Pointer.wrap(bound(Pointer.unwrap(upper), Pointer.unwrap(lower), type(uint256).max));
-        vm.assume(Pointer.unwrap(upper) % 0x20 == 0);
+        upper = Pointer.wrap(Pointer.unwrap(upper) - (Pointer.unwrap(upper) % 0x20));
+
         assertTrue(lower.toIndexSigned(upper) >= 0, "index should be positive");
         uint256 lowerIndex = Pointer.unwrap(lower) / 0x20;
         uint256 upperIndex = Pointer.unwrap(upper) / 0x20;
@@ -28,11 +30,11 @@ contract LibStackPointerToIndexSignedTest is Test {
     function testUnsafeToIndexNegative(Pointer lower, Pointer upper) public {
         // Lower has to be at least 32 bytes above 0, otherwise upper can't be
         // below it to show a negative index.
-        lower = Pointer.wrap(Pointer.unwrap(lower) - Pointer.unwrap(lower) % 0x20);
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0x20, type(uint256).max));
+        lower = Pointer.wrap(Pointer.unwrap(lower) - (Pointer.unwrap(lower) % 0x20));
 
-        upper = Pointer.wrap(Pointer.unwrap(upper) - Pointer.unwrap(upper) % 0x20);
         upper = Pointer.wrap(bound(Pointer.unwrap(upper), 0, Pointer.unwrap(lower.unsafeSubWord())));
+        upper = Pointer.wrap(Pointer.unwrap(upper) - (Pointer.unwrap(upper) % 0x20));
 
         assertTrue(lower.toIndexSigned(upper) < 0, "index should be negative");
         uint256 lowerIndex = Pointer.unwrap(lower) / 0x20;
