@@ -28,10 +28,12 @@ contract LibStackPointerToIndexSignedTest is Test {
     function testUnsafeToIndexNegative(Pointer lower, Pointer upper) public {
         // Lower has to be at least 32 bytes above 0, otherwise upper can't be
         // below it to show a negative index.
+        lower = Pointer.wrap(Pointer.unwrap(lower) - Pointer.unwrap(lower) % 0x20);
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0x20, type(uint256).max));
-        vm.assume(Pointer.unwrap(lower) % 0x20 == 0);
+
+        upper = Pointer.wrap(Pointer.unwrap(upper) - Pointer.unwrap(upper) % 0x20);
         upper = Pointer.wrap(bound(Pointer.unwrap(upper), 0, Pointer.unwrap(lower.unsafeSubWord())));
-        vm.assume(Pointer.unwrap(upper) % 0x20 == 0);
+
         assertTrue(lower.toIndexSigned(upper) < 0, "index should be negative");
         uint256 lowerIndex = Pointer.unwrap(lower) / 0x20;
         uint256 upperIndex = Pointer.unwrap(upper) / 0x20;
