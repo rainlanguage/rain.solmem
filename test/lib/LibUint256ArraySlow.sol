@@ -68,6 +68,23 @@ library LibUint256ArraySlow {
     }
 
     /// Slow implementation of arrayFrom for testing purposes.
+    function arrayFromSlow(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f, uint256 g)
+        internal
+        pure
+        returns (uint256[] memory)
+    {
+        uint256[] memory array = new uint256[](7);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
+        array[3] = d;
+        array[4] = e;
+        array[5] = f;
+        array[6] = g;
+        return array;
+    }
+
+    /// Slow implementation of arrayFrom for testing purposes.
     function arrayFromSlow(uint256 a, uint256[] memory tail) internal pure returns (uint256[] memory) {
         uint256[] memory array = new uint256[](tail.length + 1);
         array[0] = a;

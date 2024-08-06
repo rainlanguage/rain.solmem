@@ -111,6 +111,30 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4, 5, 6);
     }
 
+    function testArrayFromABCDEFG(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f, uint256 g) public {
+        uint256[] memory array;
+        {
+            array = a.arrayFrom(b, c, d, e, f, g);
+            assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
+            assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
+            assertTrue(LibMemory.memoryIsAligned());
+        }
+
+        uint256[] memory arraySlow;
+        {
+            arraySlow = a.arrayFromSlow(b, c, d, e, f, g);
+        }
+        assertEq(array, arraySlow);
+    }
+
+    function testArrayFromABCDEFGGas0() public pure returns (uint256[] memory) {
+        return uint256(1).arrayFrom(2, 3, 4, 5, 6, 7);
+    }
+
+    function testArrayFromABCDEFGGasSlow0() public pure returns (uint256[] memory) {
+        return uint256(1).arrayFromSlow(2, 3, 4, 5, 6, 7);
+    }
+
     function testArrayFromATail(uint256 a, uint256[] memory tail) public {
         uint256[] memory array = a.arrayFrom(tail);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
