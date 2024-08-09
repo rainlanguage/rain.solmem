@@ -202,6 +202,38 @@ library LibUint256Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
+    /// @param a The first integer to build an array around.
+    /// @param b The second integer to build an array around.
+    /// @param c The third integer to build an array around.
+    /// @param d The fourth integer to build an array around.
+    /// @param e The fifth integer to build an array around.
+    /// @param f The sixth integer to build an array around.
+    /// @param g The seventh integer to build an array around.
+    /// @param h The eighth integer to build an array around.
+    /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`,
+    /// `f`, `g` and `h` as the only items.
+    function arrayFrom(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f, uint256 g, uint256 h)
+        internal
+        pure
+        returns (uint256[] memory array)
+    {
+        assembly ("memory-safe") {
+            array := mload(0x40)
+            mstore(array, 8)
+            mstore(add(array, 0x20), a)
+            mstore(add(array, 0x40), b)
+            mstore(add(array, 0x60), c)
+            mstore(add(array, 0x80), d)
+            mstore(add(array, 0xA0), e)
+            mstore(add(array, 0xC0), f)
+            mstore(add(array, 0xE0), g)
+            mstore(add(array, 0x100), h)
+            mstore(0x40, add(array, 0x120))
+        }
+    }
+
+    /// Building arrays from literal components is a common task that introduces
+    /// boilerplate that is either inefficient or error prone.
     /// @param a The head of the new array.
     /// @param tail The tail of the new array.
     /// @return array The new array.
