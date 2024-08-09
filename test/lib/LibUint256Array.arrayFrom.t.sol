@@ -135,6 +135,42 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4, 5, 6, 7);
     }
 
+    struct Vals {
+        uint256 a;
+        uint256 b;
+        uint256 c;
+        uint256 d;
+        uint256 e;
+        uint256 f;
+        uint256 g;
+        uint256 h;
+    }
+
+    /// Test A through H.
+    function testArrayFromABCDEFGH(Vals memory vals) public {
+        uint256[] memory array;
+        {
+            array = vals.a.arrayFrom(vals.b, vals.c, vals.d, vals.e, vals.f, vals.g, vals.h);
+            assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
+            assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
+            assertTrue(LibMemory.memoryIsAligned());
+        }
+
+        uint256[] memory arraySlow;
+        {
+            arraySlow = vals.a.arrayFromSlow(vals.b, vals.c, vals.d, vals.e, vals.f, vals.g, vals.h);
+        }
+        assertEq(array, arraySlow);
+    }
+
+    function testArrayFromABCDEFGHGas0() public pure returns (uint256[] memory) {
+        return uint256(1).arrayFrom(2, 3, 4, 5, 6, 7, 8);
+    }
+
+    function testArrayFromABCDEFGHGasSlow0() public pure returns (uint256[] memory) {
+        return uint256(1).arrayFromSlow(2, 3, 4, 5, 6, 7, 8);
+    }
+
     function testArrayFromATail(uint256 a, uint256[] memory tail) public {
         uint256[] memory array = a.arrayFrom(tail);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
