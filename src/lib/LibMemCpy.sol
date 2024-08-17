@@ -19,7 +19,31 @@ library LibMemCpy {
     /// @param length The number of bytes to read/write.
     function unsafeCopyBytesTo(Pointer sourceCursor, Pointer targetCursor, uint256 length) internal pure {
         assembly ("memory-safe") {
-            mcopy(targetCursor, sourceCursor, length)
+            // Precalculating the end here, rather than tracking the remaining
+            // length each iteration uses relatively more gas for less data, but
+            // scales better for more data. Copying 1-2 words is ~30 gas more
+            // expensive but copying 3+ words favours a precalculated end point
+            // increasingly for more data.
+            let m := mod(length, 0x20)
+            let end := add(sourceCursor, sub(length, m))
+            for {} lt(sourceCursor, end) {
+                sourceCursor := add(sourceCursor, 0x20)
+                targetCursor := add(targetCursor, 0x20)
+            } { mstore(targetCursor, mload(sourceCursor)) }
+
+            if iszero(iszero(m)) {
+                //slither-disable-next-line incorrect-shift
+                let mask := shr(mul(m, 8), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+                // preserve existing bytes
+                mstore(
+                    targetCursor,
+                    or(
+                        // input
+                        and(mload(sourceCursor), not(mask)),
+                        and(mload(targetCursor), mask)
+                    )
+                )
+            }
         }
     }
 
@@ -38,7 +62,10 @@ library LibMemCpy {
     /// be copied.
     function unsafeCopyWordsTo(Pointer source, Pointer target, uint256 length) internal pure {
         assembly ("memory-safe") {
-            mcopy(target, source, mul(length, 0x20))
+            for { let end := add(source, mul(0x20, length)) } lt(source, end) {
+                source := add(source, 0x20)
+                target := add(target, 0x20)
+            } { mstore(target, mload(source)) }
         }
     }
 }
