@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.25;
 
-import "./LibPointer.sol";
+import {Pointer} from "./LibPointer.sol";
 
 /// Thrown when the sentinel cannot be found. This can be because the sentinel
 /// was not in stack, but also if the upper pointer is below the lower, or the
