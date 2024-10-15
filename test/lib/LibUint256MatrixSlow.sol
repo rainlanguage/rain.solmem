@@ -3,13 +3,13 @@
 pragma solidity =0.8.25;
 
 library LibUint256MatrixSlow {
-    function compareMatrices(uint256[][] memory a, uint256[][] memory b, uint256 expectedLength_)
+    function compareMatrices(uint256[][] memory a, uint256[][] memory b, uint256 expectedLength)
         internal
         pure
         returns (bool)
     {
         bool equal = true;
-        equal = equal && (a.length == expectedLength_);
+        equal = equal && (a.length == expectedLength);
         equal = equal && (a.length == b.length);
         for (uint256 i = 0; i < a.length; i++) {
             uint256 hashesEqual;
