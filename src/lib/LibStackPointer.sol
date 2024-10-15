@@ -5,9 +5,7 @@ pragma solidity ^0.8.25;
 import {LibUint256Array} from "./LibUint256Array.sol";
 import {LibMemory} from "./LibMemory.sol";
 import {Pointer} from "./LibMemCpy.sol";
-
-/// Throws if a stack pointer is not aligned to 32 bytes.
-error UnalignedStackPointer(Pointer pointer);
+import {UnalignedStackPointer} from "../error/ErrStackPointer.sol";
 
 /// @title LibStackPointer
 /// @notice A stack `Pointer` is still just a pointer to some memory, but we are

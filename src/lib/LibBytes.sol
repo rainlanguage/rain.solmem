@@ -3,11 +3,7 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-
-/// Thrown when asked to truncate data to a longer length.
-/// @param length Actual bytes length.
-/// @param truncate Attempted truncation length.
-error TruncateError(uint256 length, uint256 truncate);
+import {TruncateError} from "../error/ErrBytes.sol";
 
 /// @title LibBytes
 /// @notice Tools for working directly with memory in a Solidity compatible way.
