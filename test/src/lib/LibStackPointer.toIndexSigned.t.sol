@@ -5,7 +5,8 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 
 import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibStackPointer, UnalignedStackPointer} from "src/lib/LibStackPointer.sol";
+import {LibStackPointer} from "src/lib/LibStackPointer.sol";
+import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
 
 /// @title LibStackPointerToIndexSignedTest
 /// Exercise the conversion of stack pointers to signed indexes.
@@ -43,23 +44,13 @@ contract LibStackPointerToIndexSignedTest is Test {
         assertEq(lower.toIndexSigned(upper), -int256(lowerIndex - upperIndex));
     }
 
-    /// Test that unaligned lower pointers throw.
+    /// Test that unaligned pointers throw.
     function testUnsafeToIndexUnalignedLower(Pointer lower, Pointer upper) public {
-        lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0x10, type(uint256).max));
-        vm.assume(Pointer.unwrap(lower) % 0x20 != 0);
-        upper = Pointer.wrap(bound(Pointer.unwrap(upper), Pointer.unwrap(lower), type(uint256).max));
-        upper = Pointer.wrap(Pointer.unwrap(upper) - (Pointer.unwrap(upper) % 0x20));
-        vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, lower));
-        lower.toIndexSigned(upper);
-    }
-
-    /// Test that unaligned upper pointers throw.
-    function testUnsafeToIndexUnalignedUpper(Pointer lower, Pointer upper) public {
-        lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0, type(uint256).max));
-        vm.assume(Pointer.unwrap(lower) % 0x20 == 0);
-        upper = Pointer.wrap(bound(Pointer.unwrap(upper), Pointer.unwrap(lower), type(uint256).max));
-        vm.assume(Pointer.unwrap(upper) % 0x20 != 0);
-        vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, upper));
+        uint256 difference = Pointer.unwrap(upper) >= Pointer.unwrap(lower)
+            ? Pointer.unwrap(upper) - Pointer.unwrap(lower)
+            : Pointer.unwrap(lower) - Pointer.unwrap(upper);
+        vm.assume(difference % 0x20 != 0);
+        vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, lower, upper));
         lower.toIndexSigned(upper);
     }
 }

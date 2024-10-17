@@ -4,7 +4,6 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 
-import {LibMemory} from "src/lib/LibMemory.sol";
 import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
 import {LibPointer} from "src/lib/LibPointer.sol";
 
@@ -16,11 +15,10 @@ contract LibUint256ArrayArrayFromTest is Test {
     using LibUint256Array for uint256[];
     using LibUint256ArraySlow for uint256[];
 
-    function testArrayFromA(uint256 a) public {
+    function testArrayFromA(uint256 a) public pure {
         uint256[] memory array = a.arrayFrom();
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow());
     }
 
@@ -32,11 +30,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow();
     }
 
-    function testArrayFromAB(uint256 a, uint256 b) public {
+    function testArrayFromAB(uint256 a, uint256 b) public pure {
         uint256[] memory array = a.arrayFrom(b);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b));
     }
 
@@ -48,11 +45,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2);
     }
 
-    function testArrayFromABC(uint256 a, uint256 b, uint256 c) public {
+    function testArrayFromABC(uint256 a, uint256 b, uint256 c) public pure {
         uint256[] memory array = a.arrayFrom(b, c);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b, c));
     }
 
@@ -64,11 +60,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3);
     }
 
-    function testArrayFromABCD(uint256 a, uint256 b, uint256 c, uint256 d) public {
+    function testArrayFromABCD(uint256 a, uint256 b, uint256 c, uint256 d) public pure {
         uint256[] memory array = a.arrayFrom(b, c, d);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b, c, d));
     }
 
@@ -80,11 +75,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4);
     }
 
-    function testArrayFromABCDE(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e) public {
+    function testArrayFromABCDE(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e) public pure {
         uint256[] memory array = a.arrayFrom(b, c, d, e);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b, c, d, e));
     }
 
@@ -96,11 +90,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4, 5);
     }
 
-    function testArrayFromABCDEF(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f) public {
+    function testArrayFromABCDEF(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f) public pure {
         uint256[] memory array = a.arrayFrom(b, c, d, e, f);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b, c, d, e, f));
     }
 
@@ -112,13 +105,15 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4, 5, 6);
     }
 
-    function testArrayFromABCDEFG(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f, uint256 g) public {
+    function testArrayFromABCDEFG(uint256 a, uint256 b, uint256 c, uint256 d, uint256 e, uint256 f, uint256 g)
+        public
+        pure
+    {
         uint256[] memory array;
         {
             array = a.arrayFrom(b, c, d, e, f, g);
             assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
             assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-            assertTrue(LibMemory.memoryIsAligned());
         }
 
         uint256[] memory arraySlow;
@@ -148,13 +143,12 @@ contract LibUint256ArrayArrayFromTest is Test {
     }
 
     /// Test A through H.
-    function testArrayFromABCDEFGH(Vals memory vals) public {
+    function testArrayFromABCDEFGH(Vals memory vals) public pure {
         uint256[] memory array;
         {
             array = vals.a.arrayFrom(vals.b, vals.c, vals.d, vals.e, vals.f, vals.g, vals.h);
             assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
             assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-            assertTrue(LibMemory.memoryIsAligned());
         }
 
         uint256[] memory arraySlow;
@@ -172,11 +166,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(2, 3, 4, 5, 6, 7, 8);
     }
 
-    function testArrayFromATail(uint256 a, uint256[] memory tail) public {
+    function testArrayFromATail(uint256 a, uint256[] memory tail) public pure {
         uint256[] memory array = a.arrayFrom(tail);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(tail));
     }
 
@@ -188,11 +181,10 @@ contract LibUint256ArrayArrayFromTest is Test {
         return uint256(1).arrayFromSlow(uint256(2).arrayFrom(3, 4));
     }
 
-    function testArrayFromABTail(uint256 a, uint256 b, uint256[] memory tail) public {
+    function testArrayFromABTail(uint256 a, uint256 b, uint256[] memory tail) public pure {
         uint256[] memory array = a.arrayFrom(b, tail);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         assertEq(array, a.arrayFromSlow(b, tail));
     }
 

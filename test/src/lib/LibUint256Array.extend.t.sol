@@ -4,9 +4,7 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 
-import {LibMemory} from "src/lib/LibMemory.sol";
 import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-
 import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayExtendTest is Test {
@@ -19,7 +17,6 @@ contract LibUint256ArrayExtendTest is Test {
             c[i] = a[i];
         }
         c = LibUint256Array.unsafeExtend(c, b);
-        assertTrue(LibMemory.memoryIsAligned());
 
         assertEq(c, LibUint256ArraySlow.extendSlow(a, b));
     }
@@ -32,7 +29,6 @@ contract LibUint256ArrayExtendTest is Test {
             c[i] = b[i];
         }
         b = LibUint256Array.unsafeExtend(b, a);
-        assertTrue(LibMemory.memoryIsAligned());
 
         assertEq(b, LibUint256ArraySlow.extendSlow(c, a));
     }

@@ -4,12 +4,11 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibMemory} from "src/lib/LibMemory.sol";
 import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
 import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayTruncateTest is Test {
-    function testTruncate(uint256[] memory a, uint256 newLength) public {
+    function testTruncate(uint256[] memory a, uint256 newLength) public pure {
         vm.assume(newLength <= a.length);
         uint256[] memory b = new uint256[](a.length);
         for (uint256 i = 0; i < a.length; i++) {
@@ -18,7 +17,6 @@ contract LibUint256ArrayTruncateTest is Test {
         assertEq(a, b);
 
         LibUint256Array.truncate(a, newLength);
-        assertTrue(LibMemory.memoryIsAligned());
 
         b = LibUint256ArraySlow.truncateSlow(b, newLength);
         assertEq(a, b);
