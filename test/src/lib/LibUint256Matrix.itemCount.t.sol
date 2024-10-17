@@ -4,7 +4,7 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {LibUint256Matrix} from "src/lib/LibUint256Matrix.sol";
-import {LibUint256MatrixSlow} from "./LibUint256MatrixSlow.sol";
+import {LibUint256MatrixSlow} from "test/lib/LibUint256MatrixSlow.sol";
 
 contract LibUint256MatrixItemCountTest is Test {
     using LibUint256Matrix for uint256[][];
