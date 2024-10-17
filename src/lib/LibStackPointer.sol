@@ -146,14 +146,17 @@ library LibStackPointer {
     /// bottom. Negative if `lower` is above `upper`.
     function toIndexSigned(Pointer lower, Pointer upper) internal pure returns (int256) {
         unchecked {
-            uint256 distance = Pointer.unwrap(upper) - Pointer.unwrap(lower);
+            uint256 distance = Pointer.unwrap(upper) >= Pointer.unwrap(lower)
+                ? Pointer.unwrap(upper) - Pointer.unwrap(lower)
+                : Pointer.unwrap(lower) - Pointer.unwrap(upper);
+
             if (distance % 0x20 != 0) {
-                revert UnalignedStackPointer(upper);
+                revert UnalignedStackPointer(lower, upper);
             }
             // Dividing by 0x20 before casting to a signed int avoids the case
             // where the difference between the two pointers is greater than
             // `type(int256).max` and would overflow the signed int.
-            return int256(distance / 0x20);
+            return int256(Pointer.unwrap(upper) / 0x20) - int256(Pointer.unwrap(lower) / 0x20);
         }
     }
 }
