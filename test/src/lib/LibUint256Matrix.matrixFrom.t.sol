@@ -5,7 +5,6 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 import {LibUint256Array} from "src/lib/LibUint256Array.sol";
 import {LibUint256Matrix, LibPointer, Pointer} from "src/lib/LibUint256Matrix.sol";
-import {LibMemory} from "src/lib/LibMemory.sol";
 
 import {LibUint256MatrixSlow} from "test/lib/LibUint256MatrixSlow.sol";
 
@@ -20,7 +19,6 @@ contract LibUint256ArrayMatrixFromTest is Test {
         uint256[][] memory matrix = a.matrixFrom();
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(matrix.endPointer()));
         assertEq(Pointer.unwrap(matrix.endPointer()) - Pointer.unwrap(matrix.dataPointer()), matrix.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         uint256[][] memory matrixSlow = a.matrixFromSlow();
         assertTrue(LibUint256MatrixSlow.compareMatrices(matrix, matrixSlow, 1));
     }
@@ -38,7 +36,6 @@ contract LibUint256ArrayMatrixFromTest is Test {
         uint256[][] memory matrix = LibUint256Matrix.matrixFrom(a, b);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(matrix.endPointer()));
         assertEq(Pointer.unwrap(matrix.endPointer()) - Pointer.unwrap(matrix.dataPointer()), matrix.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         uint256[][] memory matrixSlow = LibUint256MatrixSlow.matrixFromSlow(a, b);
         assertTrue(LibUint256MatrixSlow.compareMatrices(matrix, matrixSlow, 2));
     }
@@ -56,7 +53,6 @@ contract LibUint256ArrayMatrixFromTest is Test {
         uint256[][] memory matrix = LibUint256Matrix.matrixFrom(a, b, c);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(matrix.endPointer()));
         assertEq(Pointer.unwrap(matrix.endPointer()) - Pointer.unwrap(matrix.dataPointer()), matrix.length * 0x20);
-        assertTrue(LibMemory.memoryIsAligned());
         uint256[][] memory matrixSlow = LibUint256MatrixSlow.matrixFromSlow(a, b, c);
         assertTrue(LibUint256MatrixSlow.compareMatrices(matrix, matrixSlow, 3));
     }

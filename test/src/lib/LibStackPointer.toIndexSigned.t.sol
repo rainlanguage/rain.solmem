@@ -5,7 +5,8 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 
 import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibStackPointer, UnalignedStackPointer} from "src/lib/LibStackPointer.sol";
+import {LibStackPointer} from "src/lib/LibStackPointer.sol";
+import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
 
 /// @title LibStackPointerToIndexSignedTest
 /// Exercise the conversion of stack pointers to signed indexes.

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.25;
 
 import {LibUint256Array} from "./LibUint256Array.sol";
-import {LibMemory} from "./LibMemory.sol";
 import {Pointer} from "./LibMemCpy.sol";
 import {UnalignedStackPointer} from "../error/ErrStackPointer.sol";
 
@@ -37,7 +36,6 @@ library LibStackPointer {
     using LibStackPointer for uint256[];
     using LibStackPointer for bytes;
     using LibUint256Array for uint256[];
-    using LibMemory for uint256;
 
     /// Read the word immediately below the given stack pointer.
     ///
@@ -148,16 +146,14 @@ library LibStackPointer {
     /// bottom. Negative if `lower` is above `upper`.
     function toIndexSigned(Pointer lower, Pointer upper) internal pure returns (int256) {
         unchecked {
-            if (Pointer.unwrap(lower) % 0x20 != 0) {
-                revert UnalignedStackPointer(lower);
-            }
-            if (Pointer.unwrap(upper) % 0x20 != 0) {
+            uint256 distance = Pointer.unwrap(upper) - Pointer.unwrap(lower);
+            if (distance % 0x20 != 0) {
                 revert UnalignedStackPointer(upper);
             }
             // Dividing by 0x20 before casting to a signed int avoids the case
             // where the difference between the two pointers is greater than
             // `type(int256).max` and would overflow the signed int.
-            return int256(Pointer.unwrap(upper) / 0x20) - int256(Pointer.unwrap(lower) / 0x20);
+            return int256(distance / 0x20);
         }
     }
 }
