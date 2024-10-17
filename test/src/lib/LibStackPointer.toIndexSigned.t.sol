@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity =0.8.25;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-import "src/lib/LibPointer.sol";
-import "src/lib/LibStackPointer.sol";
+import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
+import {LibStackPointer, UnalignedStackPointer} from "src/lib/LibStackPointer.sol";
 
 /// @title LibStackPointerToIndexSignedTest
 /// Exercise the conversion of stack pointers to signed indexes.
@@ -13,7 +14,7 @@ contract LibStackPointerToIndexSignedTest is Test {
     using LibStackPointer for Pointer;
 
     /// Test that positive indexes are converted correctly.
-    function testUnsafeToIndexPositive(Pointer lower, Pointer upper) public {
+    function testUnsafeToIndexPositive(Pointer lower, Pointer upper) public pure {
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0, type(uint256).max));
         lower = Pointer.wrap(Pointer.unwrap(lower) - (Pointer.unwrap(lower) % 0x20));
 
@@ -27,7 +28,7 @@ contract LibStackPointerToIndexSignedTest is Test {
     }
 
     /// Test that negative indexes are converted correctly.
-    function testUnsafeToIndexNegative(Pointer lower, Pointer upper) public {
+    function testUnsafeToIndexNegative(Pointer lower, Pointer upper) public pure {
         // Lower has to be at least 32 bytes above 0, otherwise upper can't be
         // below it to show a negative index.
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0x20, type(uint256).max));
@@ -47,7 +48,7 @@ contract LibStackPointerToIndexSignedTest is Test {
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0x10, type(uint256).max));
         vm.assume(Pointer.unwrap(lower) % 0x20 != 0);
         upper = Pointer.wrap(bound(Pointer.unwrap(upper), Pointer.unwrap(lower), type(uint256).max));
-        vm.assume(Pointer.unwrap(upper) % 0x20 == 0);
+        upper = Pointer.wrap(Pointer.unwrap(upper) - (Pointer.unwrap(upper) % 0x20));
         vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, lower));
         lower.toIndexSigned(upper);
     }

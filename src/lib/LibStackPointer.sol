@@ -1,12 +1,11 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.25;
 
-import "./LibUint256Array.sol";
-import "./LibMemory.sol";
-import "./LibMemCpy.sol";
-
-/// Throws if a stack pointer is not aligned to 32 bytes.
-error UnalignedStackPointer(Pointer pointer);
+import {LibUint256Array} from "./LibUint256Array.sol";
+import {LibMemory} from "./LibMemory.sol";
+import {Pointer} from "./LibMemCpy.sol";
+import {UnalignedStackPointer} from "../error/ErrStackPointer.sol";
 
 /// @title LibStackPointer
 /// @notice A stack `Pointer` is still just a pointer to some memory, but we are

@@ -1,11 +1,12 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity =0.8.25;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-import "src/lib/LibPointer.sol";
-import "src/lib/LibStackPointer.sol";
-import "src/lib/LibStackSentinel.sol";
+import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
+import {LibUint256Array} from "src/lib/LibStackPointer.sol";
+import {LibStackSentinel, Sentinel, MissingSentinel} from "src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];
@@ -17,7 +18,7 @@ contract LibStackSentinelTest is Test {
         Sentinel sentinel,
         uint8 lengthAlpha,
         uint8 lengthBravo
-    ) public {
+    ) public pure {
         for (uint256 i = 0; i < stack.length; i++) {
             //slither-disable-next-line calls-loop
             vm.assume(stack[i] != Sentinel.unwrap(sentinel));
@@ -49,7 +50,7 @@ contract LibStackSentinelTest is Test {
 
     /// We can read multiple sentinels from the stack, and each time we consume
     /// we stop at the first discovered sentinel.
-    function testConsumeSentinelTuplesMultiple(uint256[] memory stack, Sentinel sentinel, uint8 length) public {
+    function testConsumeSentinelTuplesMultiple(uint256[] memory stack, Sentinel sentinel, uint8 length) public pure {
         for (uint256 i = 0; i < stack.length; i++) {
             //slither-disable-next-line calls-loop
             vm.assume(stack[i] != Sentinel.unwrap(sentinel));
@@ -77,7 +78,7 @@ contract LibStackSentinelTest is Test {
         assertEq(count * length, stack.length);
     }
 
-    function testConsumeSentinelTuples(uint256[] memory stack, Sentinel sentinel, uint8 sentinelIndex) public {
+    function testConsumeSentinelTuples(uint256[] memory stack, Sentinel sentinel, uint8 sentinelIndex) public pure {
         for (uint256 i = 0; i < stack.length; i++) {
             //slither-disable-next-line calls-loop
             vm.assume(stack[i] != Sentinel.unwrap(sentinel));
@@ -114,7 +115,7 @@ contract LibStackSentinelTest is Test {
         );
     }
 
-    function testConsumeSentinelTuples3(uint256[] memory stack, Sentinel sentinel, uint8 sentinelIndex) public {
+    function testConsumeSentinelTuples3(uint256[] memory stack, Sentinel sentinel, uint8 sentinelIndex) public pure {
         for (uint256 i = 0; i < stack.length; i++) {
             //slither-disable-next-line calls-loop
             vm.assume(stack[i] != Sentinel.unwrap(sentinel));

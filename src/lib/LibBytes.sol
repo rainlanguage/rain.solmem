@@ -1,12 +1,9 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.25;
 
-import "./LibPointer.sol";
-
-/// Thrown when asked to truncate data to a longer length.
-/// @param length Actual bytes length.
-/// @param truncate Attempted truncation length.
-error TruncateError(uint256 length, uint256 truncate);
+import {Pointer} from "./LibPointer.sol";
+import {TruncateError} from "../error/ErrBytes.sol";
 
 /// @title LibBytes
 /// @notice Tools for working directly with memory in a Solidity compatible way.

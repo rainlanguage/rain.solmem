@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: CAL
+// SPDX-License-Identifier: LicenseRef-DCL-1.0
+// SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity ^0.8.25;
 
-import "./LibPointer.sol";
+import {Pointer, LibPointer} from "./LibPointer.sol";
 
 library LibUint256Matrix {
     /// Pointer to the start (length prefix) of a `uint256[][]`.
