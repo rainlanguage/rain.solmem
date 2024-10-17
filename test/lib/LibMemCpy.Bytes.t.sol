@@ -2,17 +2,17 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity =0.8.25;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-import "src/lib/LibMemCpy.sol";
-import "src/lib/LibBytes.sol";
-import "src/lib/LibPointer.sol";
+import {LibMemCpy} from "src/lib/LibMemCpy.sol";
+import {Pointer, LibBytes} from "src/lib/LibBytes.sol";
+import {LibPointer} from "src/lib/LibPointer.sol";
 
 contract LibMemCpyBytesTest is Test {
     using LibPointer for Pointer;
     using LibBytes for bytes;
 
-    function testCopyFuzz(bytes memory source, uint256 suffix) public {
+    function testCopyFuzz(bytes memory source, uint256 suffix) public pure {
         bytes memory target = new bytes(source.length);
         uint256 end;
         assembly {
@@ -29,22 +29,22 @@ contract LibMemCpyBytesTest is Test {
         assertEq(suffix, suffixAfter);
     }
 
-    function testCopyMultiWordFuzz(bytes memory source, uint256 suffix) public {
+    function testCopyMultiWordFuzz(bytes memory source, uint256 suffix) public pure {
         vm.assume(source.length > 0x20);
         testCopyFuzz(source, suffix);
     }
 
-    function testCopyMaxSuffixFuzz(bytes memory source) public {
+    function testCopyMaxSuffixFuzz(bytes memory source) public pure {
         testCopyFuzz(source, type(uint256).max);
     }
 
-    function testCopySimple() public {
+    function testCopySimple() public pure {
         testCopyFuzz(hex"010203", type(uint256).max);
     }
 
     // Uses somewhat circular logic to test that existing data in target cannot
     // corrupt copying from source somehow.
-    function testCopyDirtyTargetFuzz(bytes memory source, bytes memory target) public {
+    function testCopyDirtyTargetFuzz(bytes memory source, bytes memory target) public pure {
         vm.assume(target.length >= source.length);
         bytes memory remainder = new bytes(target.length - source.length);
         LibMemCpy.unsafeCopyBytesTo(

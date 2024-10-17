@@ -2,19 +2,20 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 thedavidmeister
 pragma solidity =0.8.25;
 
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-import "src/lib/LibPointer.sol";
-import "src/lib/LibStackPointer.sol";
-import "src/lib/LibUint256Array.sol";
+import {LibPointer} from "src/lib/LibPointer.sol";
+import {LibStackPointer} from "src/lib/LibStackPointer.sol";
+import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
 
 contract LibStackPointerTest is Test {
     using LibPointer for Pointer;
     using LibStackPointer for Pointer;
     using LibUint256Array for uint256[];
 
-    function testUnsafePeek(uint256 a, uint256 b) public {
-        Pointer pointer = LibPointer.allocatedMemoryPointer();
+    function testUnsafePeek(uint256 a, uint256 b) public pure {
+        uint256[] memory array = new uint256[](1);
+        Pointer pointer = array.dataPointer();
         Pointer peekable = pointer.unsafeAddWord();
 
         pointer.unsafeWriteWord(a);
@@ -28,8 +29,9 @@ contract LibStackPointerTest is Test {
         assertEq(b, peekable.unsafePeek());
     }
 
-    function testUnsafePeek2(uint256 a, uint256 b, uint256 c, uint256 d) public {
-        Pointer pointer = LibPointer.allocatedMemoryPointer();
+    function testUnsafePeek2(uint256 a, uint256 b, uint256 c, uint256 d) public pure {
+        uint256[] memory array = new uint256[](2);
+        Pointer pointer = array.dataPointer();
         Pointer peekable = pointer.unsafeAddWords(2);
 
         pointer.unsafeWriteWord(a);
@@ -51,8 +53,9 @@ contract LibStackPointerTest is Test {
         assertEq(peek5, d);
     }
 
-    function testUnsafePop(uint256 a, uint256 b) public {
-        Pointer pointer = LibPointer.allocatedMemoryPointer();
+    function testUnsafePop(uint256 a, uint256 b) public pure {
+        uint256[] memory array = new uint256[](2);
+        Pointer pointer = array.dataPointer();
         Pointer poppable = pointer.unsafeAddWord();
 
         pointer.unsafeWriteWord(a);
@@ -77,8 +80,9 @@ contract LibStackPointerTest is Test {
         assertEq(b, pop2);
     }
 
-    function testUnsafePush(uint256 a, uint256 b) public {
-        Pointer pointer = LibPointer.allocatedMemoryPointer();
+    function testUnsafePush(uint256 a, uint256 b) public pure {
+        uint256[] memory array = new uint256[](1);
+        Pointer pointer = array.dataPointer();
 
         Pointer push0 = pointer.unsafePush(a);
         assertEq(Pointer.unwrap(push0), Pointer.unwrap(pointer.unsafeAddWord()));
@@ -89,7 +93,7 @@ contract LibStackPointerTest is Test {
         assertEq(pointer.unsafeReadWord(), b);
     }
 
-    function testUnsafeList(uint256[] memory array, uint8 length) public {
+    function testUnsafeList(uint256[] memory array, uint8 length) public pure {
         vm.assume(length < array.length);
         Pointer pointer = array.endPointer();
 
