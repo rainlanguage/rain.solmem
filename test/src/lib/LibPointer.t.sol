@@ -43,7 +43,7 @@ contract LibPointerTest is Test {
         assertEq(uint256(pointer) - uint256(n) * 0x20, Pointer.unwrap(Pointer.wrap(pointer).unsafeSubWords(n)));
     }
 
-    function testReadWriteRound(uint256 a, uint256 b) public pure {
+    function testReadWriteRound(bytes32 a, bytes32 b) public pure {
         Pointer pointer = LibPointer.allocatedMemoryPointer();
         pointer.unsafeWriteWord(a);
         assertEq(a, pointer.unsafeReadWord());
