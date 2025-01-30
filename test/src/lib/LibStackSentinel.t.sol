@@ -41,11 +41,15 @@ contract LibStackSentinelTest is Test {
             Pointer.unwrap(stack.endPointer().unsafeSubWords(lengthAlpha + lengthBravo)), Pointer.unwrap(stackTopBravo)
         );
 
-        assertEq(tuplesPointerAlpha.unsafeReadWord(), 1);
-        assertEq(tuplesPointerBravo.unsafeReadWord(), 1);
+        assertEq(tuplesPointerAlpha.unsafeReadWord(), bytes32(uint256(1)));
+        assertEq(tuplesPointerBravo.unsafeReadWord(), bytes32(uint256(1)));
 
-        assertEq(Pointer.unwrap(stackTopAlpha.unsafeAddWord()), tuplesPointerAlpha.unsafeAddWord().unsafeReadWord());
-        assertEq(Pointer.unwrap(stackTopBravo.unsafeAddWord()), tuplesPointerBravo.unsafeAddWord().unsafeReadWord());
+        assertEq(
+            Pointer.unwrap(stackTopAlpha.unsafeAddWord()), uint256(tuplesPointerAlpha.unsafeAddWord().unsafeReadWord())
+        );
+        assertEq(
+            Pointer.unwrap(stackTopBravo.unsafeAddWord()), uint256(tuplesPointerBravo.unsafeAddWord().unsafeReadWord())
+        );
     }
 
     /// We can read multiple sentinels from the stack, and each time we consume
@@ -72,7 +76,7 @@ contract LibStackSentinelTest is Test {
             assertEq(Pointer.unwrap(stackTopBefore) - Pointer.unwrap(stackTop), uint256(length) * 0x20);
             // Length of tuples should be 1 because length - 1 is the _size_ of
             // each tuple item.
-            assertEq(tuplesPointer.unsafeReadWord(), 1);
+            assertEq(tuplesPointer.unsafeReadWord(), bytes32(uint256(1)));
             count++;
         }
         assertEq(count * length, stack.length);

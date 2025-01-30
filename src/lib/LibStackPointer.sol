@@ -49,7 +49,7 @@ library LibStackPointer {
     ///
     /// @param pointer Pointer to the top of the stack to read below.
     /// @return word The word that was read.
-    function unsafePeek(Pointer pointer) internal pure returns (uint256 word) {
+    function unsafePeek(Pointer pointer) internal pure returns (bytes32 word) {
         assembly ("memory-safe") {
             word := mload(sub(pointer, 0x20))
         }
@@ -62,7 +62,7 @@ library LibStackPointer {
     /// @param pointer The stack top to peek below.
     /// @return lower The lower of the two words read.
     /// @return upper The upper of the two words read.
-    function unsafePeek2(Pointer pointer) internal pure returns (uint256 lower, uint256 upper) {
+    function unsafePeek2(Pointer pointer) internal pure returns (bytes32 lower, bytes32 upper) {
         assembly ("memory-safe") {
             lower := mload(sub(pointer, 0x40))
             upper := mload(sub(pointer, 0x20))
@@ -82,7 +82,7 @@ library LibStackPointer {
     /// @param pointer Pointer to the top of the stack to read below.
     /// @return pointerAfter Pointer after the pop.
     /// @return word The word that was read.
-    function unsafePop(Pointer pointer) internal pure returns (Pointer pointerAfter, uint256 word) {
+    function unsafePop(Pointer pointer) internal pure returns (Pointer pointerAfter, bytes32 word) {
         assembly ("memory-safe") {
             pointerAfter := sub(pointer, 0x20)
             word := mload(pointerAfter)
@@ -102,7 +102,7 @@ library LibStackPointer {
     /// @param pointer The stack pointer to write at.
     /// @param word The value to write.
     /// @return The stack pointer above where `word` was written to.
-    function unsafePush(Pointer pointer, uint256 word) internal pure returns (Pointer) {
+    function unsafePush(Pointer pointer, bytes32 word) internal pure returns (Pointer) {
         assembly ("memory-safe") {
             mstore(pointer, word)
             pointer := add(pointer, 0x20)
@@ -127,7 +127,7 @@ library LibStackPointer {
     /// @param length The number of values to include in the returned array.
     /// @return head The value that was overwritten with the length.
     /// @return tail The array constructed from the stack memory.
-    function unsafeList(Pointer pointer, uint256 length) internal pure returns (uint256 head, uint256[] memory tail) {
+    function unsafeList(Pointer pointer, uint256 length) internal pure returns (bytes32 head, bytes32[] memory tail) {
         assembly ("memory-safe") {
             tail := sub(pointer, add(0x20, mul(length, 0x20)))
             head := mload(tail)
