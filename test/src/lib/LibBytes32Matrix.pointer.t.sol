@@ -12,7 +12,7 @@ contract LibBytes32MatrixPointerTest is Test {
     using LibBytes32Matrix for Pointer;
 
     /// forge-config: default.fuzz.runs = 100
-    function testUnsafeAsBytes32MatrixRoundUint256Array(bytes32[][] memory matrix) public pure {
+    function testUnsafeAsBytes32MatrixRoundBytes32Array(bytes32[][] memory matrix) public pure {
         assertTrue(
             LibBytes32MatrixSlow.compareMatrices(matrix, matrix.startPointer().unsafeAsBytes32Matrix(), matrix.length)
         );
