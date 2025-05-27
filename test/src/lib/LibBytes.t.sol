@@ -10,6 +10,11 @@ contract LibBytesTest is Test {
     using LibBytes for bytes;
     using LibPointer for Pointer;
 
+    function truncateExternal(bytes memory data, uint256 length) external pure returns (bytes memory) {
+        data.truncate(length);
+        return data;
+    }
+
     function testTruncateFuzz(bytes memory data, uint256 length) public pure {
         vm.assume(data.length >= length);
         data.truncate(length);
@@ -19,7 +24,7 @@ contract LibBytesTest is Test {
     function testTruncateError(bytes memory data, uint256 length) public {
         vm.assume(data.length < length);
         vm.expectRevert(abi.encodeWithSelector(TruncateError.selector, data.length, length));
-        data.truncate(length);
+        this.truncateExternal(data, length);
     }
 
     function testDataPointerFuzz(bytes memory data) public pure {

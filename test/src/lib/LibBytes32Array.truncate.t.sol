@@ -8,6 +8,11 @@ import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
 import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
 
 contract LibBytes32ArrayTruncateTest is Test {
+    function truncateExternal(bytes32[] memory a, uint256 newLength) external pure returns (bytes32[] memory) {
+        LibBytes32Array.truncate(a, newLength);
+        return a;
+    }
+
     function testTruncate(bytes32[] memory a, uint256 newLength) public pure {
         vm.assume(newLength <= a.length);
         bytes32[] memory b = new bytes32[](a.length);
@@ -25,7 +30,7 @@ contract LibBytes32ArrayTruncateTest is Test {
     function testTruncateError(bytes32[] memory a, uint256 newLength) public {
         vm.assume(newLength > a.length);
         vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, a.length, newLength));
-        LibBytes32Array.truncate(a, newLength);
+        this.truncateExternal(a, newLength);
     }
 
     function testTruncateGas0() public pure {

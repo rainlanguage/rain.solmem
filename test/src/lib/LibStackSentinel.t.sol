@@ -157,6 +157,14 @@ contract LibStackSentinelTest is Test {
         );
     }
 
+    function consumeSentinelTuplesExternal(uint256[] memory stack, Sentinel sentinel)
+        external
+        pure
+        returns (Pointer, Pointer)
+    {
+        return stack.dataPointer().consumeSentinelTuples(stack.endPointer(), sentinel, 2);
+    }
+
     function testConsumeSentinelTuplesMissingSentinel(uint256[] memory stack, Sentinel sentinel) public {
         for (uint256 i = 0; i < stack.length; i++) {
             //slither-disable-next-line calls-loop
@@ -164,8 +172,7 @@ contract LibStackSentinelTest is Test {
         }
 
         vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
-        (Pointer sentinelPointer, Pointer tuplesPointer) =
-            stack.dataPointer().consumeSentinelTuples(stack.endPointer(), sentinel, 2);
+        (Pointer sentinelPointer, Pointer tuplesPointer) = this.consumeSentinelTuplesExternal(stack, sentinel);
         (sentinelPointer);
         (tuplesPointer);
     }
@@ -184,8 +191,13 @@ contract LibStackSentinelTest is Test {
         stack[sentinelIndex] = Sentinel.unwrap(sentinel);
 
         vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
-        (Pointer sentinelPointer, Pointer tuplesPointer) =
-            stack.dataPointer().consumeSentinelTuples(stack.endPointer(), sentinel, 2);
+        (Pointer sentinelPointer, Pointer tuplesPointer) = this.consumeSentinelTuplesExternal(stack, sentinel);
+        (sentinelPointer);
+        (tuplesPointer);
+    }
+
+    function consumeSentinelTuplesExternal(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n) external pure {
+        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, n);
         (sentinelPointer);
         (tuplesPointer);
     }
@@ -202,9 +214,7 @@ contract LibStackSentinelTest is Test {
         // Underflow will revert because it will run out of gas attempting to
         // loop over infinity.
         vm.expectRevert();
-        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, n);
-        (sentinelPointer);
-        (tuplesPointer);
+        this.consumeSentinelTuplesExternal(lower, upper, sentinel, n);
     }
 
     function testConsumeSentinelTuplesInitialStateUnderflowError(Pointer lower, Pointer upper, Sentinel sentinel)
@@ -213,34 +223,40 @@ contract LibStackSentinelTest is Test {
         vm.assume(Pointer.unwrap(upper) < Pointer.unwrap(lower));
 
         vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
-        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
-        (sentinelPointer);
-        (tuplesPointer);
+        this.consumeSentinelTuplesExternal(lower, upper, sentinel, 2);
     }
 
-    function testConsumeSentinelTuplesEmpty(Sentinel sentinel) public {
+    function consumeSentinelTuplesEmptyErrorExternal(Sentinel sentinel) external pure {
         Pointer lower;
         assembly ("memory-safe") {
             lower := mload(0x40)
             mstore(lower, sentinel)
         }
 
-        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
-        //slither-disable-next-line similar-names
-        (Pointer sentinelPointer0, Pointer tuplesPointer0) = lower.consumeSentinelTuples(lower, sentinel, 2);
-        (sentinelPointer0);
-        (tuplesPointer0);
-
-        //slither-disable-next-line similar-names
-        (Pointer sentinelPointer1, Pointer tuplesPointer1) =
-            lower.consumeSentinelTuples(lower.unsafeAddWord(), sentinel, 2);
-        (sentinelPointer1);
-        (tuplesPointer1);
-        assertEq(Pointer.unwrap(sentinelPointer1), Pointer.unwrap(lower));
-        assertEq(tuplesPointer1.unsafeReadWord(), 0);
+        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(lower, sentinel, 2);
+        (sentinelPointer);
+        (tuplesPointer);
     }
 
-    function testConsumeSentinelTuplesGas0() public pure {
+    function testConsumeSentinelTuplesEmptyError(Sentinel sentinel) external {
+        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
+        this.consumeSentinelTuplesEmptyErrorExternal(sentinel);
+    }
+
+    function testConsumeSentinelTuplesEmpty(Sentinel sentinel) external pure {
+        Pointer lower;
+        assembly ("memory-safe") {
+            lower := mload(0x40)
+            mstore(lower, sentinel)
+        }
+
+        (Pointer sentinelPointer, Pointer tuplesPointer) =
+            lower.consumeSentinelTuples(lower.unsafeAddWord(), sentinel, 2);
+        assertEq(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower));
+        assertEq(tuplesPointer.unsafeReadWord(), 0);
+    }
+
+    function testConsumeSentinelTuplesGas0() external pure {
         Pointer lower;
         Pointer upper;
         Sentinel sentinel = Sentinel.wrap(50);
