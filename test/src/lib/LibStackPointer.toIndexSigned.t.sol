@@ -14,6 +14,10 @@ contract LibStackPointerToIndexSignedTest is Test {
     using LibPointer for Pointer;
     using LibStackPointer for Pointer;
 
+    function toIndexSignedExternal(Pointer lower, Pointer upper) external pure returns (int256) {
+        return lower.toIndexSigned(upper);
+    }
+
     /// Test that positive indexes are converted correctly.
     function testUnsafeToIndexPositive(Pointer lower, Pointer upper) public pure {
         lower = Pointer.wrap(bound(Pointer.unwrap(lower), 0, type(uint256).max));
@@ -51,6 +55,6 @@ contract LibStackPointerToIndexSignedTest is Test {
             : Pointer.unwrap(lower) - Pointer.unwrap(upper);
         vm.assume(difference % 0x20 != 0);
         vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, lower, upper));
-        lower.toIndexSigned(upper);
+        this.toIndexSignedExternal(lower, upper);
     }
 }
