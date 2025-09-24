@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity ^0.8.25;
 
+// keeping this import here so downstream code can get LibPointer easily.
+// forge-lint: disable-next-line(unused-import)
 import {Pointer, LibPointer} from "./LibPointer.sol";
 
 library LibBytes32Matrix {

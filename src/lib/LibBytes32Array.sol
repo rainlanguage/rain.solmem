@@ -3,7 +3,6 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {LibMemCpy} from "./LibMemCpy.sol";
 import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
 
 /// @title Bytes32Array
