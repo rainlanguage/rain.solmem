@@ -5,8 +5,6 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
 
-import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
-
 contract LibUint256ArrayPointerTest is Test {
     using LibUint256Array for uint256[];
     using LibUint256Array for Pointer;

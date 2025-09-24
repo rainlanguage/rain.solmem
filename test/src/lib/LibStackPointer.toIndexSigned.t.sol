@@ -29,6 +29,7 @@ contract LibStackPointerToIndexSignedTest is Test {
         assertTrue(lower.toIndexSigned(upper) >= 0, "index should be positive");
         uint256 lowerIndex = Pointer.unwrap(lower) / 0x20;
         uint256 upperIndex = Pointer.unwrap(upper) / 0x20;
+        //forge-lint: disable-next-line(unsafe-typecast)
         assertEq(lower.toIndexSigned(upper), int256(upperIndex - lowerIndex));
     }
 
@@ -45,6 +46,7 @@ contract LibStackPointerToIndexSignedTest is Test {
         assertTrue(lower.toIndexSigned(upper) < 0, "index should be negative");
         uint256 lowerIndex = Pointer.unwrap(lower) / 0x20;
         uint256 upperIndex = Pointer.unwrap(upper) / 0x20;
+        //forge-lint: disable-next-line(unsafe-typecast)
         assertEq(lower.toIndexSigned(upper), -int256(lowerIndex - upperIndex));
     }
 
