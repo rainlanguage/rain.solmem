@@ -248,13 +248,7 @@ library LibUint256Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            for {
-                outputCursor := add(outputCursor, 0x40)
-                let inputCursor := add(tail, 0x20)
-            } lt(outputCursor, outputEnd) {
-                outputCursor := add(outputCursor, 0x20)
-                inputCursor := add(inputCursor, 0x20)
-            } { mstore(outputCursor, mload(inputCursor)) }
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(sub(length, 1), 0x20))
         }
     }
 
@@ -276,13 +270,7 @@ library LibUint256Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            for {
-                outputCursor := add(outputCursor, 0x60)
-                let inputCursor := add(tail, 0x20)
-            } lt(outputCursor, outputEnd) {
-                outputCursor := add(outputCursor, 0x20)
-                inputCursor := add(inputCursor, 0x20)
-            } { mstore(outputCursor, mload(inputCursor)) }
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(sub(length, 2), 0x20))
         }
     }
 
@@ -348,24 +336,20 @@ library LibUint256Array {
                 switch eq(outputCursor, baseEnd)
                 case 0 {
                     let newBase := outputCursor
-                    let newBaseEnd := add(newBase, sub(baseEnd, base))
+                    // Base size includes the length word and is in bytes.
+                    let newBaseSize := sub(baseEnd, base)
+                    let newBaseEnd := add(newBase, newBaseSize)
                     mstore(0x40, newBaseEnd)
-                    for { let inputCursor := base } lt(outputCursor, newBaseEnd) {
-                        inputCursor := add(inputCursor, 0x20)
-                        outputCursor := add(outputCursor, 0x20)
-                    } { mstore(outputCursor, mload(inputCursor)) }
+                    mcopy(newBase, base, newBaseSize)
 
                     baseAfter := extendInline(newBase, extend)
                 }
                 case 1 {
-                    let totalLength_ := add(baseLength, mload(extend))
-                    let outputEnd_ := add(base, add(0x20, mul(totalLength_, 0x20)))
-                    mstore(base, totalLength_)
-                    mstore(0x40, outputEnd_)
-                    for { let inputCursor := add(extend, 0x20) } lt(outputCursor, outputEnd_) {
-                        inputCursor := add(inputCursor, 0x20)
-                        outputCursor := add(outputCursor, 0x20)
-                    } { mstore(outputCursor, mload(inputCursor)) }
+                    let totalLength := add(baseLength, mload(extend))
+                    let outputEnd := add(base, add(0x20, mul(totalLength, 0x20)))
+                    mstore(base, totalLength)
+                    mstore(0x40, outputEnd)
+                    mcopy(baseEnd, add(extend, 0x20), mul(mload(extend), 0x20))
 
                     baseAfter := base
                 }

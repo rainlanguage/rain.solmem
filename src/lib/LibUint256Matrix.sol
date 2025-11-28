@@ -136,13 +136,9 @@ library LibUint256Matrix {
 
             let arrayCursor := add(array, 0x20)
             for {} lt(cursor, end) {} {
-                let itemCursor := add(mload(cursor), 0x20)
-                let itemEnd := add(itemCursor, mul(mload(mload(cursor)), 0x20))
-                for {} lt(itemCursor, itemEnd) {} {
-                    mstore(arrayCursor, mload(itemCursor))
-                    arrayCursor := add(arrayCursor, 0x20)
-                    itemCursor := add(itemCursor, 0x20)
-                }
+                let size := mul(mload(mload(cursor)), 0x20)
+                mcopy(arrayCursor, add(mload(cursor), 0x20), size)
+                arrayCursor := add(arrayCursor, size)
                 cursor := add(cursor, 0x20)
             }
         }
