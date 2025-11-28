@@ -270,13 +270,7 @@ library LibBytes32Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            for {
-                outputCursor := add(outputCursor, 0x60)
-                let inputCursor := add(tail, 0x20)
-            } lt(outputCursor, outputEnd) {
-                outputCursor := add(outputCursor, 0x20)
-                inputCursor := add(inputCursor, 0x20)
-            } { mstore(outputCursor, mload(inputCursor)) }
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(sub(length, 2), 0x20))
         }
     }
 
