@@ -336,24 +336,20 @@ library LibBytes32Array {
                 switch eq(outputCursor, baseEnd)
                 case 0 {
                     let newBase := outputCursor
-                    let newBaseEnd := add(newBase, sub(baseEnd, base))
+                    // Base size includes the length word and is in bytes.
+                    let newBaseSize := sub(baseEnd, base)
+                    let newBaseEnd := add(newBase, newBaseSize)
                     mstore(0x40, newBaseEnd)
-                    for { let inputCursor := base } lt(outputCursor, newBaseEnd) {
-                        inputCursor := add(inputCursor, 0x20)
-                        outputCursor := add(outputCursor, 0x20)
-                    } { mstore(outputCursor, mload(inputCursor)) }
+                    mcopy(newBase, base, newBaseSize)
 
                     baseAfter := extendInline(newBase, extend)
                 }
                 case 1 {
-                    let totalLength_ := add(baseLength, mload(extend))
-                    let outputEnd_ := add(base, add(0x20, mul(totalLength_, 0x20)))
-                    mstore(base, totalLength_)
-                    mstore(0x40, outputEnd_)
-                    for { let inputCursor := add(extend, 0x20) } lt(outputCursor, outputEnd_) {
-                        inputCursor := add(inputCursor, 0x20)
-                        outputCursor := add(outputCursor, 0x20)
-                    } { mstore(outputCursor, mload(inputCursor)) }
+                    let totalLength := add(baseLength, mload(extend))
+                    let outputEnd := add(base, add(0x20, mul(totalLength, 0x20)))
+                    mstore(base, totalLength)
+                    mstore(0x40, outputEnd)
+                    mcopy(baseEnd, add(extend, 0x20), mul(mload(extend), 0x20))
 
                     baseAfter := base
                 }
