@@ -205,7 +205,18 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromATail(bytes32 a, bytes32[] memory tail) public pure {
+        bytes32 afterAllocated;
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
+
         bytes32[] memory array = a.arrayFrom(tail);
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
+
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
         assertEq(array, a.arrayFromSlow(tail));
