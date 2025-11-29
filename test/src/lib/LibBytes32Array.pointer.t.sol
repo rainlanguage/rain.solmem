@@ -5,7 +5,7 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std/Test.sol";
 import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
 
-contract LibByes32ArrayPointerTest is Test {
+contract LibBytes32ArrayPointerTest is Test {
     using LibBytes32Array for bytes32[];
     using LibBytes32Array for Pointer;
 
