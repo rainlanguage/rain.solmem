@@ -248,7 +248,7 @@ library LibBytes32Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(sub(length, 1), 0x20))
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(mload(tail), 0x20))
         }
     }
 
@@ -270,7 +270,7 @@ library LibBytes32Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(sub(length, 2), 0x20))
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(mload(tail), 0x20))
         }
     }
 
