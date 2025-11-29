@@ -167,7 +167,18 @@ contract LibUint256ArrayArrayFromTest is Test {
     }
 
     function testArrayFromATail(uint256 a, uint256[] memory tail) public pure {
+        bytes32 afterAllocated;
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
+
         uint256[] memory array = a.arrayFrom(tail);
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
+
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
         assertEq(array, a.arrayFromSlow(tail));
@@ -182,7 +193,16 @@ contract LibUint256ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABTail(uint256 a, uint256 b, uint256[] memory tail) public pure {
+        bytes32 afterAllocated;
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
         uint256[] memory array = a.arrayFrom(b, tail);
+        assembly ("memory-safe") {
+            afterAllocated := mload(mload(0x40))
+        }
+        assertEq(bytes32(0), afterAllocated);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
         assertEq(array, a.arrayFromSlow(b, tail));
