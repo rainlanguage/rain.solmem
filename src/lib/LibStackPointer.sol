@@ -124,7 +124,7 @@ library LibStackPointer {
     /// stack writes.
     /// The caller is responsible for ensuring that `pointer` and `length` are
     /// built from a real Solidity array, ensuring that the reads and writes in
-    /// this function do not underflow the original array. Specifcally that
+    /// this function do not underflow the original array. Specifically that
     /// `length` is not greater than the number of items in the array below
     /// `pointer`.
     /// @param pointer The stack pointer to read the values below into an
