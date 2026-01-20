@@ -6,12 +6,27 @@ import {Test} from "forge-std/Test.sol";
 
 import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
 import {LibUint256Array} from "src/lib/LibStackPointer.sol";
-import {LibStackSentinel, Sentinel, MissingSentinel} from "src/lib/LibStackSentinel.sol";
+import {LibStackSentinel, Sentinel, MissingSentinel, ZeroSentinelTupleSize} from "src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];
     using LibPointer for Pointer;
     using LibStackSentinel for Pointer;
+
+    function externalConsumeSentinelTuplesStack(uint256[] memory stack, Sentinel sentinel, uint256 n)
+        external
+        pure
+        returns (Pointer, Pointer)
+    {
+        Pointer stackBottom = stack.dataPointer();
+        Pointer stackTop = stack.endPointer();
+        return stackBottom.consumeSentinelTuples(stackTop, sentinel, n);
+    }
+
+    function testConsumeSentinelTuplesNZeroError(uint256[] memory stack, Sentinel sentinel) external {
+        vm.expectRevert(abi.encodeWithSelector(ZeroSentinelTupleSize.selector));
+        this.externalConsumeSentinelTuplesStack(stack, sentinel, 0);
+    }
 
     function testConsumeSentinelTuplesMultiSize(
         uint256[] memory stack,
