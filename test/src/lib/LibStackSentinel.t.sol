@@ -6,7 +6,13 @@ import {Test} from "forge-std/Test.sol";
 
 import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
 import {LibUint256Array} from "src/lib/LibStackPointer.sol";
-import {LibStackSentinel, Sentinel, MissingSentinel, ZeroSentinelTupleSize} from "src/lib/LibStackSentinel.sol";
+import {
+    LibStackSentinel,
+    Sentinel,
+    MissingSentinel,
+    ZeroSentinelTupleSize,
+    InvalidStackBounds
+} from "src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];
@@ -237,7 +243,7 @@ contract LibStackSentinelTest is Test {
     {
         vm.assume(Pointer.unwrap(upper) < Pointer.unwrap(lower));
 
-        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
+        vm.expectRevert(abi.encodeWithSelector(InvalidStackBounds.selector, lower, upper));
         this.consumeSentinelTuplesExternal(lower, upper, sentinel, 2);
     }
 
