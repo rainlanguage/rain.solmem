@@ -13,6 +13,12 @@ error ZeroSentinelTupleSize();
 /// @param sentinel The sentinel that was not found.
 error MissingSentinel(Sentinel sentinel);
 
+/// Thrown when the stack bounds are invalid because the lower is above the
+/// upper.
+/// @param lower The lower stack pointer.
+/// @param upper The upper stack pointer.
+error InvalidStackBounds(Pointer lower, Pointer upper);
+
 /// > In computer programming, a sentinel value (also referred to as a flag
 /// > value, trip value, rogue value, signal value, or dummy data)[1] is a
 /// > special value in the context of an algorithm which uses its presence as a
@@ -131,6 +137,9 @@ library LibStackSentinel {
 
         // We revert if the sentinel was not found.
         if (Pointer.unwrap(sentinelPointer) == 0) {
+            if (Pointer.unwrap(upper) < Pointer.unwrap(lower)) {
+                revert InvalidStackBounds(lower, upper);
+            }
             revert MissingSentinel(sentinel);
         }
 
