@@ -4,6 +4,9 @@ pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
 
+/// Thrown when the sentinel tuple size is zero.
+error ZeroSentinelTupleSize();
+
 /// Thrown when the sentinel cannot be found. This can be because the sentinel
 /// was not in stack, but also if the upper pointer is below the lower, or the
 /// sentinel is in the stack but not aligned with the tuples size.
@@ -106,6 +109,10 @@ library LibStackSentinel {
         pure
         returns (Pointer sentinelPointer, Pointer tuplesPointer)
     {
+        if (n == 0) {
+            revert ZeroSentinelTupleSize();
+        }
+
         // Each tuple takes this much space in memory.
         uint256 size;
 
