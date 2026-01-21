@@ -83,15 +83,13 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABCDEGas0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFrom(
-            bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5))
-        );
+        return bytes32(uint256(1))
+            .arrayFrom(bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)));
     }
 
     function testArrayFromABCDEGasSlow0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFromSlow(
-            bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5))
-        );
+        return bytes32(uint256(1))
+            .arrayFromSlow(bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)));
     }
 
     function testArrayFromABCDEF(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f) public pure {
@@ -102,15 +100,17 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABCDEFGas0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFrom(
-            bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)), bytes32(uint256(6))
-        );
+        return bytes32(uint256(1))
+            .arrayFrom(
+                bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)), bytes32(uint256(6))
+            );
     }
 
     function testArrayFromABCDEFGasSlow0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFromSlow(
-            bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)), bytes32(uint256(6))
-        );
+        return bytes32(uint256(1))
+            .arrayFromSlow(
+                bytes32(uint256(2)), bytes32(uint256(3)), bytes32(uint256(4)), bytes32(uint256(5)), bytes32(uint256(6))
+            );
     }
 
     function testArrayFromABCDEFG(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f, bytes32 g)
@@ -132,25 +132,27 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABCDEFGGas0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFrom(
-            bytes32(uint256(2)),
-            bytes32(uint256(3)),
-            bytes32(uint256(4)),
-            bytes32(uint256(5)),
-            bytes32(uint256(6)),
-            bytes32(uint256(7))
-        );
+        return bytes32(uint256(1))
+            .arrayFrom(
+                bytes32(uint256(2)),
+                bytes32(uint256(3)),
+                bytes32(uint256(4)),
+                bytes32(uint256(5)),
+                bytes32(uint256(6)),
+                bytes32(uint256(7))
+            );
     }
 
     function testArrayFromABCDEFGGasSlow0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFromSlow(
-            bytes32(uint256(2)),
-            bytes32(uint256(3)),
-            bytes32(uint256(4)),
-            bytes32(uint256(5)),
-            bytes32(uint256(6)),
-            bytes32(uint256(7))
-        );
+        return bytes32(uint256(1))
+            .arrayFromSlow(
+                bytes32(uint256(2)),
+                bytes32(uint256(3)),
+                bytes32(uint256(4)),
+                bytes32(uint256(5)),
+                bytes32(uint256(6)),
+                bytes32(uint256(7))
+            );
     }
 
     struct Vals {
@@ -181,27 +183,29 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABCDEFGHGas0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFrom(
-            bytes32(uint256(2)),
-            bytes32(uint256(3)),
-            bytes32(uint256(4)),
-            bytes32(uint256(5)),
-            bytes32(uint256(6)),
-            bytes32(uint256(7)),
-            bytes32(uint256(8))
-        );
+        return bytes32(uint256(1))
+            .arrayFrom(
+                bytes32(uint256(2)),
+                bytes32(uint256(3)),
+                bytes32(uint256(4)),
+                bytes32(uint256(5)),
+                bytes32(uint256(6)),
+                bytes32(uint256(7)),
+                bytes32(uint256(8))
+            );
     }
 
     function testArrayFromABCDEFGHGasSlow0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFromSlow(
-            bytes32(uint256(2)),
-            bytes32(uint256(3)),
-            bytes32(uint256(4)),
-            bytes32(uint256(5)),
-            bytes32(uint256(6)),
-            bytes32(uint256(7)),
-            bytes32(uint256(8))
-        );
+        return bytes32(uint256(1))
+            .arrayFromSlow(
+                bytes32(uint256(2)),
+                bytes32(uint256(3)),
+                bytes32(uint256(4)),
+                bytes32(uint256(5)),
+                bytes32(uint256(6)),
+                bytes32(uint256(7)),
+                bytes32(uint256(8))
+            );
     }
 
     function testArrayFromATail(bytes32 a, bytes32[] memory tail) public pure {
@@ -249,14 +253,12 @@ contract LibBytes32ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABTailGas0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFrom(
-            bytes32(uint256(2)), bytes32(uint256(3)).arrayFrom(bytes32(uint256(4)), bytes32(uint256(5)))
-        );
+        return bytes32(uint256(1))
+            .arrayFrom(bytes32(uint256(2)), bytes32(uint256(3)).arrayFrom(bytes32(uint256(4)), bytes32(uint256(5))));
     }
 
     function testArrayFromABTailGasSlow0() public pure returns (bytes32[] memory) {
-        return bytes32(uint256(1)).arrayFromSlow(
-            bytes32(uint256(2)), bytes32(uint256(3)).arrayFrom(bytes32(uint256(4)), bytes32(uint256(5)))
-        );
+        return bytes32(uint256(1))
+            .arrayFromSlow(bytes32(uint256(2)), bytes32(uint256(3)).arrayFrom(bytes32(uint256(4)), bytes32(uint256(5))));
     }
 }
