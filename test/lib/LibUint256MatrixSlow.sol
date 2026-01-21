@@ -16,8 +16,10 @@ library LibUint256MatrixSlow {
             uint256[] memory ai = a[i];
             uint256[] memory bi = b[i];
             assembly ("memory-safe") {
-                hashesEqual :=
-                    eq(keccak256(ai, mul(0x20, add(mload(ai), 1))), keccak256(bi, mul(0x20, add(mload(bi), 1))))
+                hashesEqual := eq(
+                    keccak256(ai, mul(0x20, add(mload(ai), 1))),
+                    keccak256(bi, mul(0x20, add(mload(bi), 1)))
+                )
             }
             equal = equal && (hashesEqual > 0);
             if (!equal) break;
