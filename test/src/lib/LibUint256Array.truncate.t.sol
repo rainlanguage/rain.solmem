@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std/Test.sol";
+import {Test} from "forge-std-1.16.1/src/Test.sol";
 import {LibUint256Array} from "src/lib/LibUint256Array.sol";
 import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
 import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";

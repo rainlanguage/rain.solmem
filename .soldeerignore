@@ -1,0 +1,17 @@
+.git
+.github
+.gitignore
+.gitmodules
+audit
+cache
+dependencies
+docs
+flake.lock
+flake.nix
+foundry.lock
+lib
+out
+remappings.txt
+soldeer.lock
+target
+test
