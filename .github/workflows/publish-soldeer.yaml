@@ -3,7 +3,6 @@ on:
   push:
     tags:
       - "v*"
-
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -11,7 +10,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: nixbuild/nix-quick-install-action@v30
         with:
           nix_conf: |
@@ -23,10 +21,14 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 1G
-
       - name: Push to Soldeer
         env:
           SOLDEER_API_TOKEN: ${{ secrets.SOLDEER_API_TOKEN }}
         run: |
+          # Derive the soldeer package name from the GitHub repo name so
+          # this workflow can drop into any rain.* repo unchanged. Soldeer
+          # rejects `.` in package names, so rain.solmem -> rain-solmem.
+          PACKAGE="${GITHUB_REPOSITORY##*/}"
+          PACKAGE="${PACKAGE//./-}"
           VERSION="${GITHUB_REF_NAME#v}"
-          nix develop -c forge soldeer push "rain.solmem~${VERSION}"
+          nix develop -c forge soldeer push "${PACKAGE}~${VERSION}"
