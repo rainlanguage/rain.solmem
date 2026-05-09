@@ -33,8 +33,8 @@ jobs:
           # 1G = 1073741824
           gc-max-store-size-linux: 1G
 
-      - run: nix develop -c rainix-sol-prelude
       - run: nix develop -c forge soldeer install
+      - run: nix develop -c rainix-sol-prelude
       - name: Run ${{ matrix.task }}
         env:
           ETH_RPC_URL: ${{ secrets.CI_DEPLOY_RPC_URL }}
