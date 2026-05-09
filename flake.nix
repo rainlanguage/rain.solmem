@@ -12,7 +12,7 @@
         pkgs = rainix.pkgs.${system};
       in {
         packages = rainix.packages.${system};
-        devShells = rainix.devShells.${system};
+        devShells.default = rainix.devShells.${system}.sol-shell;
       }
     );
 

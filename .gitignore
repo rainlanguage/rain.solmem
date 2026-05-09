@@ -2,3 +2,6 @@ cache
 out
 docs
 .DS_Store
+
+# Soldeer
+/dependencies

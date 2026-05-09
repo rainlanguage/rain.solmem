@@ -14,7 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
       - uses: nixbuild/nix-quick-install-action@v30
@@ -34,7 +33,7 @@ jobs:
           # 1G = 1073741824
           gc-max-store-size-linux: 1G
 
-      - run: nix develop -c rainix-sol-prelude
+      - run: nix develop -c forge soldeer install
       - name: Run ${{ matrix.task }}
         env:
           ETH_RPC_URL: ${{ secrets.CI_DEPLOY_RPC_URL }}
