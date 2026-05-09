@@ -1,11 +1,8 @@
 name: Publish to Soldeer
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish (e.g. 0.1.0). No leading 'v'."
-        required: true
-        type: string
+  push:
+    tags:
+      - "v*"
 
 jobs:
   publish:
@@ -13,7 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
 
       - uses: nixbuild/nix-quick-install-action@v30
@@ -28,6 +24,9 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.os }}-
           gc-max-store-size-linux: 1G
 
-      - run: nix develop -c forge soldeer push rain.solmem~${{ inputs.version }} --skip-warnings
+      - name: Push to Soldeer
         env:
           SOLDEER_API_TOKEN: ${{ secrets.SOLDEER_API_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          nix develop -c forge soldeer push "rain.solmem~${VERSION}" --skip-warnings
