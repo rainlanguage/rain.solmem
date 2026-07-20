@@ -26,7 +26,11 @@ contract LibArraySelfExtendTest is Test {
         assembly ("memory-safe") {
             fmpBefore := mload(0x40)
         }
-        assembly ("memory-safe") {
+        // Deliberately NOT ("memory-safe"): this writes above the free memory
+        // pointer on purpose. Claiming memory-safe here would let the optimizer
+        // assume the region is untouched and fold the read below into a
+        // constant, so the test could pass even after a regression.
+        assembly {
             mstore(add(fmpBefore, 0x60), 0xdead0001)
             mstore(add(fmpBefore, 0xa0), 0xdead0002)
         }
@@ -35,7 +39,7 @@ contract LibArraySelfExtendTest is Test {
 
         uint256 canary1;
         uint256 canary2;
-        assembly ("memory-safe") {
+        assembly {
             canary1 := mload(add(fmpBefore, 0x60))
             canary2 := mload(add(fmpBefore, 0xa0))
         }
@@ -72,14 +76,15 @@ contract LibArraySelfExtendTest is Test {
         assembly ("memory-safe") {
             fmpBefore := mload(0x40)
         }
-        assembly ("memory-safe") {
+        // Deliberately NOT ("memory-safe") — see above.
+        assembly {
             mstore(add(fmpBefore, 0x60), 0xdead0001)
         }
 
         a.unsafeExtend(a);
 
         uint256 canary1;
-        assembly ("memory-safe") {
+        assembly {
             canary1 := mload(add(fmpBefore, 0x60))
         }
         assertEq(canary1, 0xdead0001, "wrote at or above the free memory pointer");
