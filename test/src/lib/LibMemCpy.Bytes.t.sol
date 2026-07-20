@@ -59,6 +59,54 @@ contract LibMemCpyBytesTest is Test {
         assertEq(remainder, remainderCopy);
     }
 
+    /// The copy MUST move data from source into target, and MUST NOT move data
+    /// from target into source. Both buffers hold distinct non-zero patterns so
+    /// that a reversed copy is observable in both directions.
+    function testCopyBytesDirection() public pure {
+        bytes memory source = hex"aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899";
+        bytes memory target = new bytes(32);
+        for (uint256 i = 0; i < 32; i++) {
+            target[i] = 0x11;
+        }
+
+        LibMemCpy.unsafeCopyBytesTo(source.dataPointer(), target.dataPointer(), 32);
+
+        // Target receives the source bytes.
+        assertEq(target, hex"aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899");
+        // Source is left completely untouched.
+        assertEq(source, hex"aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899");
+    }
+
+    /// `mcopy` has memmove semantics, so a copy into an overlapping region at a
+    /// HIGHER address MUST read the original source bytes, not bytes that the
+    /// copy itself has already written.
+    function testCopyBytesOverlapForward() public pure {
+        bytes memory buffer =
+            hex"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40";
+        assertEq(buffer.length, 64);
+
+        // Copy buffer[0:32] over buffer[16:48]. Source and target overlap by 16
+        // bytes with the target above the source.
+        LibMemCpy.unsafeCopyBytesTo(buffer.dataPointer(), buffer.dataPointer().unsafeAddBytes(16), 32);
+
+        assertEq(
+            buffer,
+            hex"0102030405060708090a0b0c0d0e0f100102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f203132333435363738393a3b3c3d3e3f40"
+        );
+    }
+
+    /// Overlapping copy into a LOWER address must also preserve the original
+    /// source bytes.
+    function testCopyBytesOverlapBackward() public pure {
+        bytes memory buffer = hex"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+        assertEq(buffer.length, 32);
+
+        // Copy buffer[8:24] over buffer[0:16].
+        LibMemCpy.unsafeCopyBytesTo(buffer.dataPointer().unsafeAddBytes(8), buffer.dataPointer(), 16);
+
+        assertEq(buffer, hex"08090a0b0c0d0e0f1011121314151617101112131415161718191a1b1c1d1e1f");
+    }
+
     function testCopyGas0() public pure {
         bytes memory a = hex"";
         LibMemCpy.unsafeCopyBytesTo(a.dataPointer(), LibPointer.allocatedMemoryPointer(), a.length);
