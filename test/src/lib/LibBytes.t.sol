@@ -43,13 +43,71 @@ contract LibBytesTest is Test {
         assertEq(data, copy);
     }
 
-    function testEndPointers(uint8 length) public pure {
+    /// Assert every pointer of `data` against values derived from the layout of
+    /// a `bytes` in memory rather than from the implementation: a 32 byte length
+    /// prefix, then `length` bytes of data, then padding out to a whole number
+    /// of 32 byte words.
+    function checkPointers(bytes memory data, uint256 length) internal pure {
+        uint256 start = Pointer.unwrap(data.startPointer());
+
+        assertEq(data.length, length, "length");
+        assertEq(Pointer.unwrap(data.dataPointer()), start + 32, "dataPointer");
+        assertEq(Pointer.unwrap(data.endDataPointer()), start + 32 + length, "endDataPointer");
+
+        // Whole words needed to hold `length` bytes, rounded up.
+        uint256 words = length / 32;
+        if (length % 32 != 0) {
+            ++words;
+        }
+        assertEq(Pointer.unwrap(data.endAllocatedPointer()), start + 32 + (words * 32), "endAllocatedPointer");
+    }
+
+    /// The length domain here is deliberately wider than a single byte so that
+    /// pointer arithmetic that is only wrong past 0xff is caught.
+    function testEndPointers(uint16 length) public pure {
         bytes memory data = new bytes(length);
         assertEq(Pointer.unwrap(data.endAllocatedPointer()), Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
-        assertEq(
-            Pointer.unwrap(data.endAllocatedPointer()) - Pointer.unwrap(data.endDataPointer()),
-            (0x20 - (length % 32)) % 0x20
-        );
-        assertEq(Pointer.unwrap(data.endDataPointer()) - Pointer.unwrap(data.dataPointer()), length);
+        checkPointers(data, length);
+    }
+
+    /// Deterministic coverage of the word alignment boundaries and of lengths
+    /// that a `uint8` bounded fuzz can never reach.
+    function testEndPointersExactLengths() public pure {
+        uint256[12] memory lengths = [uint256(0), 1, 31, 32, 33, 63, 64, 255, 256, 257, 1000, 1024];
+        for (uint256 i = 0; i < lengths.length; ++i) {
+            bytes memory data = new bytes(lengths[i]);
+            checkPointers(data, lengths[i]);
+        }
+    }
+
+    /// Truncation must set the length EXACTLY, including for lengths that do
+    /// not fit in a single byte, and must not disturb the retained data.
+    function testTruncateLargeExact() public pure {
+        bytes memory data = new bytes(1000);
+        for (uint256 i = 0; i < 1000; ++i) {
+            data[i] = bytes1(uint8((i % 251) + 1));
+        }
+
+        data.truncate(300);
+
+        assertEq(data.length, 300);
+        for (uint256 i = 0; i < 300; ++i) {
+            assertEq(uint8(data[i]), uint8((i % 251) + 1));
+        }
+        checkPointers(data, 300);
+    }
+
+    /// Truncating to exactly the current length is a no-op, NOT a revert.
+    function testTruncateToOwnLengthExact() public pure {
+        bytes memory data = hex"0102030405";
+        data.truncate(5);
+        assertEq(data, hex"0102030405");
+    }
+
+    /// Truncating to one byte longer than the current length reverts.
+    function testTruncateOneTooLongExact() public {
+        bytes memory data = hex"0102030405";
+        vm.expectRevert(abi.encodeWithSelector(TruncateError.selector, 5, 6));
+        this.truncateExternal(data, 6);
     }
 }
