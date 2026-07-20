@@ -3,7 +3,8 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
+import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
+import {LibPointer} from "src/lib/LibPointer.sol";
 import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
 import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
 
@@ -21,7 +22,14 @@ contract LibBytes32ArrayTruncateTest is Test {
         }
         assertEq(a, b);
 
+        // truncate is documented to mutate in place with "no new allocation or
+        // copying of data", so it must not move the free memory pointer. Read
+        // the pointer immediately either side of the call under test, as
+        // assertions themselves allocate.
+        Pointer allocatedBefore = LibPointer.allocatedMemoryPointer();
         LibBytes32Array.truncate(a, newLength);
+        Pointer allocatedAfter = LibPointer.allocatedMemoryPointer();
+        assertEq(Pointer.unwrap(allocatedBefore), Pointer.unwrap(allocatedAfter), "truncate allocated");
 
         b = LibBytes32ArraySlow.truncateSlow(b, newLength);
         assertEq(a, b);

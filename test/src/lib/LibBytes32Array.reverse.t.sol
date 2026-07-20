@@ -3,7 +3,8 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
+import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
+import {LibPointer} from "src/lib/LibPointer.sol";
 import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
 
 contract LibBytes32ArrayReverseTest is Test {
@@ -14,7 +15,14 @@ contract LibBytes32ArrayReverseTest is Test {
         for (uint256 i = 0; i < a.length; i++) {
             b[i] = a[i];
         }
+
+        // reverse is documented to mutate in place, so it must not move the
+        // free memory pointer at all. Read the pointer immediately either side
+        // of the call under test, as assertions themselves allocate.
+        Pointer allocatedBefore = LibPointer.allocatedMemoryPointer();
         LibBytes32Array.reverse(a);
+        Pointer allocatedAfter = LibPointer.allocatedMemoryPointer();
+        assertEq(Pointer.unwrap(allocatedBefore), Pointer.unwrap(allocatedAfter), "reverse allocated");
 
         assertEq(a, LibBytes32ArraySlow.reverseSlow(b));
     }
