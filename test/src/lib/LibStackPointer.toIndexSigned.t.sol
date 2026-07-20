@@ -50,6 +50,23 @@ contract LibStackPointerToIndexSignedTest is Test {
         assertEq(lower.toIndexSigned(upper), -int256(lowerIndex - upperIndex));
     }
 
+    /// Equal pointers are exactly zero words apart. This pins the boundary of
+    /// the distance ternary, where `upper == lower`.
+    function testToIndexSignedEqualPointers() public pure {
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x80), Pointer.wrap(0x80)), 0);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0), Pointer.wrap(0)), 0);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x20), Pointer.wrap(0x20)), 0);
+    }
+
+    /// Exact word distances immediately either side of the equality boundary,
+    /// and further out, in both directions.
+    function testToIndexSignedExactValues() public pure {
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x80), Pointer.wrap(0xa0)), 1);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0xa0), Pointer.wrap(0x80)), -1);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x80), Pointer.wrap(0x100)), 4);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x100), Pointer.wrap(0x80)), -4);
+    }
+
     /// Test that unaligned pointers throw.
     function testUnsafeToIndexUnalignedLower(Pointer lower, Pointer upper) public {
         uint256 difference = Pointer.unwrap(upper) >= Pointer.unwrap(lower)
