@@ -113,8 +113,14 @@ contract LibStackSentinelTest is Test {
         vm.assume((stack.length - (sentinelIndex + 1)) % 2 == 0);
         stack[sentinelIndex] = Sentinel.unwrap(sentinel);
 
+        // The tuples array MUST be allocated exactly at the free memory
+        // pointer, i.e. with no gap between the prior allocation and the
+        // length slot of the tuples array.
+        Pointer expectedTuplesPointer = LibPointer.allocatedMemoryPointer();
+
         (Pointer sentinelPointer, Pointer tuplesPointer) =
             stack.dataPointer().consumeSentinelTuples(stack.endPointer(), sentinel, 2);
+        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(expectedTuplesPointer));
         uint256[2][] memory tuples;
         assembly ("memory-safe") {
             tuples := tuplesPointer
@@ -150,8 +156,14 @@ contract LibStackSentinelTest is Test {
         vm.assume((stack.length - (sentinelIndex + 1)) % 3 == 0);
         stack[sentinelIndex] = Sentinel.unwrap(sentinel);
 
+        // The tuples array MUST be allocated exactly at the free memory
+        // pointer, i.e. with no gap between the prior allocation and the
+        // length slot of the tuples array.
+        Pointer expectedTuplesPointer = LibPointer.allocatedMemoryPointer();
+
         (Pointer sentinelPointer, Pointer tuplesPointer) =
             stack.dataPointer().consumeSentinelTuples(stack.endPointer(), sentinel, 3);
+        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(expectedTuplesPointer));
         uint256[3][] memory tuples;
         assembly ("memory-safe") {
             tuples := tuplesPointer
@@ -275,6 +287,10 @@ contract LibStackSentinelTest is Test {
             lower.consumeSentinelTuples(lower.unsafeAddWord(), sentinel, 2);
         assertEq(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower));
         assertEq(tuplesPointer.unsafeReadWord(), 0);
+        // A zero length tuples array is still allocated exactly at the free
+        // memory pointer, and consumes exactly one word for its length.
+        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(lower));
+        assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(tuplesPointer.unsafeAddWord()));
     }
 
     function testConsumeSentinelTuplesGas0() external pure {
