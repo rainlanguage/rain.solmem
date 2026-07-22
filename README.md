@@ -59,6 +59,25 @@ Tag `v<x.y.z>` on `main`. The
 `forge soldeer push rain-solmem~<x.y.z>` on every `v*` tag. The package name is
 derived from the repo name with `.` substituted for `-`.
 
+## Audit
+
+External audit reports live in `audit/protofire/`. The **filename encodes the
+audited git ref**, which is what lets tooling measure drift against the exact
+state that was reviewed rather than guessing from the file's commit date:
+
+```
+rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf
+            ^ the audited commit
+```
+
+Either a `v<x.y.z>` tag or a 7–40 character commit sha is recognised. A report
+named without one still counts as an audit, but its drift is dated from the
+commit that added the PDF, which is less precise.
+
+Because the anchor is a real ref, "has this been audited?" and "has the audited
+source changed since?" are separate questions with separate answers — a release
+tag alone does not tell you the second one.
+
 ## License
 
 DecentraLicense 1.0 (DCL-1.0) — full text in
