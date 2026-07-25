@@ -12,6 +12,14 @@ contract LibMemCpyWordsTest is Test {
     using LibPointer for Pointer;
     using LibUint256Array for uint256[];
 
+    /// Distinctive value written outside an allocation so that an over-copy is
+    /// observable. MUST NOT be zero, as unwritten memory reads as zero.
+    uint256 constant CANARY = 0xDEADBEEF;
+
+    /// The word count at which `mul(length, 0x20)` wraps a whole multiple of
+    /// `2**256`, i.e. `2**256 / 32`.
+    uint256 constant OVERFLOW_PERIOD = 1 << 251;
+
     function testCopyFuzz(uint256[] memory source, uint256 suffix) public pure {
         uint256[] memory target = new uint256[](source.length);
         uint256 end;
@@ -120,6 +128,83 @@ contract LibMemCpyWordsTest is Test {
         assertEq(buffer[3], 6);
         assertEq(buffer[4], 5);
         assertEq(buffer[5], 6);
+    }
+
+    /// The byte count is `mul(length, 0x20)` in unchecked assembly, so it is
+    /// `(length mod 2**251) * 32`. At exactly `2**251` the residue is zero, so
+    /// the copy moves NOTHING and returns successfully instead of exhausting
+    /// gas on a `2**256` byte copy.
+    function testCopyWordsOverflowPeriodCopiesNothing() public pure {
+        uint256[] memory source = new uint256[](2);
+        source[0] = 7;
+        source[1] = 8;
+
+        uint256[] memory target = new uint256[](2);
+        target[0] = 111;
+        target[1] = 222;
+
+        LibMemCpy.unsafeCopyWordsTo(source.dataPointer(), target.dataPointer(), OVERFLOW_PERIOD);
+
+        assertEq(target[0], 111);
+        assertEq(target[1], 222);
+    }
+
+    /// One word above the period the residue is one, so a `length` far larger
+    /// than all of memory copies exactly one word.
+    function testCopyWordsOverflowResidueOneCopiesOneWord() public pure {
+        uint256[] memory source = new uint256[](2);
+        source[0] = 7;
+        source[1] = 8;
+
+        uint256[] memory target = new uint256[](2);
+        target[0] = 111;
+        target[1] = 222;
+
+        LibMemCpy.unsafeCopyWordsTo(source.dataPointer(), target.dataPointer(), OVERFLOW_PERIOD + 1);
+
+        assertEq(target[0], 7);
+        assertEq(target[1], 222);
+    }
+
+    /// The hazardous direction: a residue small enough to be affordable but
+    /// larger than the target allocation copies a large number of bytes past the
+    /// end of that allocation and RETURNS SUCCESSFULLY. `2**251 + 1000` writes
+    /// 32,000 bytes over a 64 byte target. Canaries pin where it stops: the last
+    /// word inside the wrapped range is destroyed, the word after it is not.
+    function testCopyWordsOverflowOverCopiesPastAllocation() public pure {
+        uint256[] memory source = new uint256[](2);
+        source[0] = 7;
+        source[1] = 8;
+
+        uint256[] memory target = new uint256[](2);
+        target[0] = 111;
+        target[1] = 222;
+
+        uint256 copiedBytes = 1000 * 0x20;
+        uint256 targetData = Pointer.unwrap(target.dataPointer());
+        uint256 inside = targetData + copiedBytes - 0x20;
+        uint256 outside = targetData + copiedBytes;
+        assembly ("memory-safe") {
+            mstore(inside, CANARY)
+            mstore(outside, CANARY)
+            // Keep solidity's allocator clear of the canaries so that only the
+            // copy under test can touch them.
+            mstore(0x40, add(outside, 0x20))
+        }
+
+        LibMemCpy.unsafeCopyWordsTo(source.dataPointer(), target.dataPointer(), OVERFLOW_PERIOD + 1000);
+
+        uint256 insideAfter;
+        uint256 outsideAfter;
+        assembly ("memory-safe") {
+            insideAfter := mload(inside)
+            outsideAfter := mload(outside)
+        }
+
+        // Silent corruption: 31,936 bytes beyond the 64 byte allocation were
+        // overwritten and the call still returned.
+        assertTrue(insideAfter != CANARY, "over-copy must reach the last word of the wrapped length");
+        assertEq(outsideAfter, CANARY, "over-copy must stop at exactly (length mod 2**251) * 32 bytes");
     }
 
     // Uses somewhat circular logic to test that existing data in target cannot

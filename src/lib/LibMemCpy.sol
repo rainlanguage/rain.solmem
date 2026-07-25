@@ -29,6 +29,24 @@ library LibMemCpy {
     /// already written to memory at `[target:target+(length * 32 bytes)]`
     /// will be overwritten.
     /// There is no return value as memory is modified directly.
+    ///
+    /// This is UNSAFE because the byte count `length * 32` is computed in
+    /// unchecked assembly and can silently overflow. The number of bytes
+    /// actually copied is `(length mod 2**251) * 32`, so the wrap is PERIODIC:
+    /// it recurs at every multiple of `2**251` rather than being a tail above a
+    /// single threshold. What makes a `length` dangerous is a small RESIDUE, not
+    /// a large magnitude; most values at or above `2**251` still exhaust gas.
+    ///
+    /// The hazard is an unbounded silent OVER-COPY. When the residue is
+    /// affordable but larger than the caller's allocation, the copy writes far
+    /// past the end of that allocation, corrupts whatever follows, and RETURNS
+    /// SUCCESSFULLY. `2**251 + 1000` writes 32,000 bytes over a 64 byte
+    /// allocation; `2**251 + 32768` copies a whole mebibyte for roughly 2.3
+    /// million gas. Small residues instead UNDER-copy, silently and benignly:
+    /// `2**251` copies nothing at all and `2**251 + 1` copies exactly one word.
+    ///
+    /// The caller MUST ensure `length` is a real word count.
+    ///
     /// @param source The starting position in memory that data will be copied
     /// from.
     /// @param target The starting position in memory that data will be copied
