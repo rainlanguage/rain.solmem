@@ -149,8 +149,9 @@ library LibStackPointer {
     /// the truncating division. If the distance is not word aligned the
     /// function will revert with `UnalignedStackPointer`.
     ///
-    /// @param lower The lower of the two values.
-    /// @param upper The higher of the two values.
+    /// @param lower The pointer the index is measured from.
+    /// @param upper The pointer the index is measured to. MAY be below `lower`,
+    /// in which case the index is negative.
     /// @return The stack index as 32 byte words distance between the top and
     /// bottom. Negative if `lower` is above `upper`.
     function toIndexSigned(Pointer lower, Pointer upper) internal pure returns (int256) {
