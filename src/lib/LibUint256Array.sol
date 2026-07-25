@@ -345,11 +345,17 @@ library LibUint256Array {
                     baseAfter := extendInline(newBase, extend)
                 }
                 case 1 {
-                    let totalLength := add(baseLength, mload(extend))
+                    // Read the extend length ONCE, before base's length word is
+                    // overwritten. When extend aliases base they are the same
+                    // word, so re-reading it after the write yields the already
+                    // combined length and the copy runs past the free memory
+                    // pointer.
+                    let extendLength := mload(extend)
+                    let totalLength := add(baseLength, extendLength)
                     let outputEnd := add(base, add(0x20, mul(totalLength, 0x20)))
                     mstore(base, totalLength)
                     mstore(0x40, outputEnd)
-                    mcopy(baseEnd, add(extend, 0x20), mul(mload(extend), 0x20))
+                    mcopy(baseEnd, add(extend, 0x20), mul(extendLength, 0x20))
 
                     baseAfter := base
                 }

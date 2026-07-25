@@ -114,4 +114,33 @@ contract LibStackPointerTest is Test {
         // array will be mutated due to the unsafety of the list.
         assertEq(uint256(array[array.length - length - 1]), length);
     }
+
+    /// `unsafeList` builds the array IN PLACE over the stack memory it was
+    /// handed. It MUST NOT allocate, and the returned `tail` MUST alias the
+    /// source memory rather than being a copy of it.
+    function testUnsafeListAliasesSourceWithoutAllocating(bytes32[] memory array, uint8 length, bytes32 poke)
+        public
+        pure
+    {
+        vm.assume(length < array.length);
+        Pointer pointer = array.endPointer();
+
+        Pointer allocatedBefore = LibPointer.allocatedMemoryPointer();
+        (, bytes32[] memory tail) = pointer.unsafeList(length);
+        Pointer allocatedAfter = LibPointer.allocatedMemoryPointer();
+
+        // "without allocating new memory" - the free memory pointer is untouched.
+        assertEq(Pointer.unwrap(allocatedBefore), Pointer.unwrap(allocatedAfter));
+
+        // The tail header sits exactly `length + 1` words below the stack top,
+        // i.e. inside the source array, not in freshly allocated memory.
+        assertEq(Pointer.unwrap(tail.startPointer()), Pointer.unwrap(pointer) - 0x20 * (uint256(length) + 1));
+
+        // Aliasing is bidirectional: writing through `tail` writes into `array`.
+        if (length > 0) {
+            tail[0] = poke;
+            assertEq(array[array.length - length], poke);
+            assertEq(tail[length - 1], array[array.length - 1]);
+        }
+    }
 }
