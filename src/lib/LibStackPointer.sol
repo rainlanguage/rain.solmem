@@ -142,11 +142,16 @@ library LibStackPointer {
 
     /// Convert two stack pointer values to a single stack index. A stack index
     /// is the distance in 32 byte increments between two stack pointers. The
-    /// calculations require the two stack pointers are aligned. If the pointers
-    /// are not aligned, the function will revert.
+    /// calculations require the two stack pointers to be aligned WITH EACH
+    /// OTHER to 32 bytes, i.e. that the distance between them is a whole number
+    /// of words. Neither pointer need be 32 byte aligned in absolute terms: a
+    /// shared sub-word offset cancels out of the distance and is discarded by
+    /// the truncating division. If the distance is not word aligned the
+    /// function will revert with `UnalignedStackPointer`.
     ///
-    /// @param lower The lower of the two values.
-    /// @param upper The higher of the two values.
+    /// @param lower The pointer the index is measured from.
+    /// @param upper The pointer the index is measured to. MAY be below `lower`,
+    /// in which case the index is negative.
     /// @return The stack index as 32 byte words distance between the top and
     /// bottom. Negative if `lower` is above `upper`.
     function toIndexSigned(Pointer lower, Pointer upper) internal pure returns (int256) {

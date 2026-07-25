@@ -67,6 +67,40 @@ contract LibStackPointerToIndexSignedTest is Test {
         assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x100), Pointer.wrap(0x80)), -4);
     }
 
+    /// Alignment is relative, not absolute. Neither pointer is 32 byte aligned
+    /// in absolute terms, but the distance between them is a whole number of
+    /// words, so the index resolves rather than reverting.
+    function testToIndexSignedRelativeAlignmentOnly() public pure {
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x10), Pointer.wrap(0x30)), 1);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x30), Pointer.wrap(0x10)), -1);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x1f), Pointer.wrap(0x9f)), 4);
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(0x9f), Pointer.wrap(0x1f)), -4);
+    }
+
+    /// A sub-word offset shared by both pointers cancels out of the distance and
+    /// is discarded by the truncating division, so the index is the same as it
+    /// would be for the aligned pair.
+    function testToIndexSignedSharedResidueCancels(uint256 base, uint8 residue, int16 words) public pure {
+        residue = uint8(bound(residue, 0, 0x1f));
+        // Keep the base well away from both ends of the range so that shifting
+        // by `words` can neither underflow nor overflow.
+        base = bound(base, 1 << 40, 1 << 200);
+        base -= base % 0x20;
+
+        uint256 lower = base + residue;
+        //forge-lint: disable-next-line(unsafe-typecast)
+        uint256 upper = uint256(int256(lower) + int256(words) * 0x20);
+
+        assertEq(LibStackPointer.toIndexSigned(Pointer.wrap(lower), Pointer.wrap(upper)), int256(words));
+    }
+
+    /// Residues that do not match leave a distance that is not a whole number of
+    /// words, which reverts even though `lower` is absolutely aligned.
+    function testToIndexSignedMismatchedResiduesRevert() public {
+        vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, Pointer.wrap(0x20), Pointer.wrap(0x38)));
+        this.toIndexSignedExternal(Pointer.wrap(0x20), Pointer.wrap(0x38));
+    }
+
     /// Test that unaligned pointers throw.
     function testUnsafeToIndexUnalignedLower(Pointer lower, Pointer upper) public {
         uint256 difference = Pointer.unwrap(upper) >= Pointer.unwrap(lower)
