@@ -1,0 +1,19 @@
+[
+  {
+    "timestamp": "2026-07-20T15:41:05Z",
+    "commit": "b3bd859",
+    "publishedTag": "v0.1.3",
+    "commitsAheadOfTag": 10,
+    "scope": "whole repo",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.27.0",
+    "summary": {
+      "baseline": 262,
+      "behaviours": 205,
+      "candidates": 27,
+      "confirmed": 3,
+      "filed": ["#50", "#54", "#55"],
+      "coveragePrs": ["#47", "#48", "#49", "#51", "#52", "#53"]
+    }
+  }
+]
