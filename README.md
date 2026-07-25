@@ -70,13 +70,58 @@ rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf
             ^ the audited commit
 ```
 
-Either a `v<x.y.z>` tag or a 7–40 character commit sha is recognised. A report
-named without one still counts as an audit, but its drift is dated from the
-commit that added the PDF, which is less precise.
+Two anchor forms are recognised, and a **tag wins** if a filename carries both:
+
+- A `[sol-]v<x.y.z>` tag. The `sol-` prefix is part of the tag rather than
+  decoration, and the result MUST be a tag that actually exists in this repo.
+  The newest tag here is `sol-v0.1.4`; there is no bare `v0.1.4`, so a filename
+  saying `v0.1.4` would resolve to nothing.
+- A 7–40 character hex commit sha, which MUST resolve to a real commit in this
+  repo. A hex-looking token that resolves to nothing is not an error — it
+  silently degrades to unanchored.
 
 Because the anchor is a real ref, "has this been audited?" and "has the audited
 source changed since?" are separate questions with separate answers — a release
 tag alone does not tell you the second one.
+
+### An unanchored report is dated by the wrong commit
+
+A report named without a resolvable anchor still counts as audited, but its
+drift is dated from **the most recent commit to touch the PDF**, not the commit
+that added it. Any later move, rename or re-commit silently resets that base to
+the day it happened.
+
+This repo is its own example. The PDF was moved into `audit/protofire/` on
+2026-07-15, while the commit it anchors, `228b35c6`, dates from 2025-12-06.
+Strip the anchor out of the filename and the audit reads as ~10 days old when
+the reviewed source is in fact 231 days stale.
+
+### The scope is exactly `audit/protofire/`
+
+A PDF anywhere else under `audit/` is **not counted as an external audit**. The
+scan deliberately walks `audit/protofire/` and only two levels deep, so a report
+left at `audit/report.pdf` is silently invisible rather than merely misfiled.
+
+### Also under `audit/`
+
+`audit/mutation-test-scans.json` is the adversarial-mutation-test scan record: a
+JSON array of run objects at the `audit/` root, one per run. It is read for the
+newest entry **by timestamp**, never by position, so entries may be appended out
+of order.
+
+`audit/` and `.audit/` are different directories, with different owners and
+different consumers. `.audit/` holds the audit skill's own run stamp
+(`.audit/runs.jsonl`), written by that skill; `audit/` holds artifacts committed
+deliberately. This repo has no `.audit/` yet, so the first audit-skill run
+creates one — do not file its output under `audit/`, or vice versa.
+
+### Nothing enforces any of this
+
+The convention is kept by discipline. No CI check in this repo validates
+filenames, the directory layout, or the presence of any of these files. Every
+violation degrades silently: an unresolvable anchor, a misplaced PDF and a
+malformed scan record all read downstream as "less audited" rather than failing
+a check.
 
 ## License
 
