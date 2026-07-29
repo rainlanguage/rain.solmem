@@ -35,6 +35,24 @@ contract LibStackSentinelTest is Test {
         this.externalConsumeSentinelTuplesStack(stack, sentinel, 0);
     }
 
+    /// A zero tuple size is reported ahead of anything that is wrong with the
+    /// bounds.
+    function testConsumeSentinelTuplesNZeroErrorPrecedence(
+        Pointer upper,
+        uint8 words,
+        uint8 offsetSeed,
+        Sentinel sentinel
+    ) external {
+        // `lower` is above `upper` AND not a whole number of words from it, so
+        // both of the pointer guards would fire too.
+        uint256 distance = (uint256(words) * 0x20) + ((uint256(offsetSeed) % 0x1f) + 1);
+        vm.assume(Pointer.unwrap(upper) <= type(uint256).max - distance);
+        Pointer lower = Pointer.wrap(Pointer.unwrap(upper) + distance);
+
+        vm.expectRevert(abi.encodeWithSelector(ZeroSentinelTupleSize.selector));
+        this.consumeSentinelTuplesExternal(lower, upper, sentinel, 0);
+    }
+
     function testConsumeSentinelTuplesMultiSize(
         uint256[] memory stack,
         Sentinel sentinel,
