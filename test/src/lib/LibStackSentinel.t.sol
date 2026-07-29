@@ -19,6 +19,12 @@ contract LibStackSentinelTest is Test {
     using LibPointer for Pointer;
     using LibStackSentinel for Pointer;
 
+    /// An underflowing scan MUST die from gas exhaustion, which spends every
+    /// unit of gas forwarded to it. Every typed error the library can raise
+    /// costs a few thousand gas at most, so a call that spends all of this
+    /// cannot have taken a typed error path.
+    uint256 internal constant UNDERFLOW_GAS = 1_000_000;
+
     function externalConsumeSentinelTuplesStack(uint256[] memory stack, Sentinel sentinel, uint256 n)
         external
         pure
@@ -229,34 +235,62 @@ contract LibStackSentinelTest is Test {
         (tuplesPointer);
     }
 
-    function consumeSentinelTuplesExternal(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n) external pure {
+    function consumeSentinelTuplesRawExternal(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
+        external
+        pure
+    {
         (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, n);
         (sentinelPointer);
         (tuplesPointer);
     }
 
-    function testConsumeSentinelTuplesUnderflowError(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
-        public
-    {
+    /// The library documents that an underflowing cursor cannot silently
+    /// succeed: it wraps to near `2**256` and the evm runs out of gas the
+    /// moment it tries to read there. Gas exhaustion is the only failure mode
+    /// that returns EMPTY revert data and consumes all the forwarded gas, so
+    /// both are asserted. `MissingSentinel`, `InvalidStackBounds` and
+    /// `ZeroSentinelTupleSize` all return a selector and leave most of the
+    /// forwarded gas unspent, so none of them can satisfy this.
+    function testConsumeSentinelTuplesUnderflowError(
+        Sentinel sentinel,
+        uint8 lowerWords,
+        uint8 rangeWords,
+        uint8 excessTuples
+    ) public {
         // If the sentinel is easy to collide with then it might just match and
         // not underflow, which defeats the purpose of the test.
         vm.assume(Sentinel.unwrap(sentinel) > type(uint128).max);
-        vm.assume(Pointer.unwrap(lower) < n);
-        vm.assume(Pointer.unwrap(upper) > Pointer.unwrap(lower));
 
-        // Underflow will revert because it will run out of gas attempting to
-        // loop over infinity.
-        vm.expectRevert();
-        this.consumeSentinelTuplesExternal(lower, upper, sentinel, n);
+        // The range sits above the free memory pointer in untouched (therefore
+        // zero, therefore never the sentinel) memory, so the scan reaches the
+        // underflow rather than terminating early or dying on the first read.
+        Pointer lower = Pointer.wrap(0x80 + uint256(lowerWords) * 0x20);
+        Pointer upper = Pointer.wrap(Pointer.unwrap(lower) + (uint256(rangeWords) + 1) * 0x20);
+
+        // Both pointers are word aligned so `n * 0x20` is strictly greater than
+        // `upper`, which makes the first decrement of the cursor wrap below
+        // zero. `n` stays small enough that `n * 0x20` itself cannot wrap.
+        uint256 n = Pointer.unwrap(upper) / 0x20 + 1 + uint256(excessTuples);
+
+        uint256 gasBefore = gasleft();
+        (bool success, bytes memory data) = address(this).call{gas: UNDERFLOW_GAS}(
+            abi.encodeCall(this.consumeSentinelTuplesRawExternal, (lower, upper, sentinel, n))
+        );
+        uint256 gasUsed = gasBefore - gasleft();
+
+        assertFalse(success, "underflow MUST revert");
+        assertEq(data.length, 0, "underflow MUST exhaust gas, not raise a typed error");
+        assertGe(gasUsed, UNDERFLOW_GAS, "underflow MUST consume all the gas it is given");
     }
 
-    function testConsumeSentinelTuplesInitialStateUnderflowError(Pointer lower, Pointer upper, Sentinel sentinel)
-        public
-    {
+    /// Inverted bounds are rejected by the explicit `upper < lower` check. The
+    /// loop guard is false on entry so the cursor is never decremented and
+    /// nothing underflows.
+    function testConsumeSentinelTuplesInvertedBoundsError(Pointer lower, Pointer upper, Sentinel sentinel) public {
         vm.assume(Pointer.unwrap(upper) < Pointer.unwrap(lower));
 
         vm.expectRevert(abi.encodeWithSelector(InvalidStackBounds.selector, lower, upper));
-        this.consumeSentinelTuplesExternal(lower, upper, sentinel, 2);
+        this.consumeSentinelTuplesRawExternal(lower, upper, sentinel, 2);
     }
 
     function consumeSentinelTuplesEmptyErrorExternal(Sentinel sentinel) external pure {
