@@ -344,6 +344,34 @@ contract LibStackSentinelTest is Test {
         this.consumeSentinelTuplesUnallocatedExternal(sentinel, words, true);
     }
 
+    /// Stages a stack above the allocated memory pointer and leaves it as the
+    /// untouched (therefore zero) memory it already is, so it cannot contain a
+    /// non zero sentinel.
+    function consumeSentinelTuplesUnallocatedMissingExternal(Sentinel sentinel) external pure {
+        Pointer lower;
+        Pointer upper;
+        assembly ("memory-safe") {
+            lower := mload(0x40)
+            upper := add(lower, 0x60)
+        }
+        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
+        (sentinelPointer);
+        (tuplesPointer);
+    }
+
+    /// The search for the sentinel only reads memory, so a stack above the
+    /// allocated memory pointer with no sentinel in it is reported as a missing
+    /// sentinel. Nothing is allocated on that path so there is nothing to
+    /// overwrite.
+    function testConsumeSentinelTuplesUnallocatedMissingSentinel(Sentinel sentinel) external {
+        // A zero sentinel would be found in the untouched memory the stack
+        // sits in.
+        vm.assume(Sentinel.unwrap(sentinel) != 0);
+
+        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
+        this.consumeSentinelTuplesUnallocatedMissingExternal(sentinel);
+    }
+
     /// A stack that ends exactly at the allocated memory pointer is entirely
     /// within allocated memory, so it is consumed and the tuples array is built
     /// directly above it, leaving the stack it references intact.
