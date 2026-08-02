@@ -16,34 +16,24 @@ import {LibPointer} from "src/lib/LibPointer.sol";
 /// Every one of these tests must read the free memory pointer IMMEDIATELY after
 /// the call under test. Assertions allocate, so any assertion made first moves
 /// the free memory pointer and destroys the measurement.
+///
+/// The same applies to the poisoned words, only more strictly. Memory at or
+/// above the free memory pointer is temporary memory belonging to whichever
+/// assembly block is currently running, so the language preserves nothing there
+/// from one block to the next. The poison tests therefore keep the whole
+/// measurement inline in exactly two assembly blocks sat flush against the call
+/// under test: one writes the sentinels and snapshots the pointer, the call
+/// runs, the next snapshots the pointer again and copies the sentinels down
+/// into an array allocated before any of it. The only boundary the poison
+/// crosses is the call being measured, which is the measurement itself and so
+/// cannot be removed. Every other boundary can, and is: no helper call sits on
+/// that path, because the compiler would be entitled to reuse the region for it
+/// and be mistaken for the call under test writing past its allocation.
 contract LibUint256ArrayAllocationTest is Test {
     using LibUint256Array for uint256[];
 
     /// Number of words of free memory poisoned above the free memory pointer.
     uint256 internal constant POISON_WORDS = 8;
-
-    /// Poison `POISON_WORDS` words of FREE memory starting at the free memory
-    /// pointer with per-word recognisable sentinels. Returns the free memory
-    /// pointer as it stood before the call under test.
-    function _poisonFreeMemory() internal pure returns (uint256 fmpBefore) {
-        assembly ("memory-safe") {
-            fmpBefore := mload(0x40)
-            for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
-                mstore(add(fmpBefore, mul(i, 0x20)), add(0xF00D0000, i))
-            }
-        }
-    }
-
-    /// Copy the poisoned region into `captured`, which the caller allocated
-    /// BEFORE poisoning so that it sits below the poisoned region and is itself
-    /// never disturbed. Copying must happen before any assertion runs.
-    function _capture(uint256[POISON_WORDS] memory captured, uint256 fmpBefore) internal pure {
-        assembly ("memory-safe") {
-            for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
-                mstore(add(captured, mul(i, 0x20)), mload(add(fmpBefore, mul(i, 0x20))))
-            }
-        }
-    }
 
     /// Every poisoned word that lies at or above the FINAL free memory pointer
     /// is still free memory and must therefore be untouched.
@@ -124,13 +114,24 @@ contract LibUint256ArrayAllocationTest is Test {
         base[0] = 0x11;
         base[1] = 0x22;
 
-        uint256 fmpBefore = _poisonFreeMemory();
+        // Poison, then the call under test, then snapshot and capture. The two
+        // assembly blocks sit flush against the call so the only boundary the
+        // poison crosses is the call being measured.
+        uint256 fmpBefore;
+        assembly ("memory-safe") {
+            fmpBefore := mload(0x40)
+            for { let i := 0 } lt(i, POISON_WORDS) { i := add(i, 1) } {
+                mstore(add(fmpBefore, mul(i, 0x20)), add(0xF00D0000, i))
+            }
+        }
         uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
         uint256 fmpAfter;
         assembly ("memory-safe") {
             fmpAfter := mload(0x40)
+            for { let i := 0 } lt(i, POISON_WORDS) { i := add(i, 1) } {
+                mstore(add(captured, mul(i, 0x20)), mload(add(fmpBefore, mul(i, 0x20))))
+            }
         }
-        _capture(captured, fmpBefore);
 
         assertEq(extended.length, 3, "length");
         assertEq(extended[2], 0x44);
@@ -149,13 +150,24 @@ contract LibUint256ArrayAllocationTest is Test {
         // Allocated after `base`, forcing the allocate-and-copy branch.
         uint256[] memory extend = new uint256[](0);
 
-        uint256 fmpBefore = _poisonFreeMemory();
+        // Poison, then the call under test, then snapshot and capture. The two
+        // assembly blocks sit flush against the call so the only boundary the
+        // poison crosses is the call being measured.
+        uint256 fmpBefore;
+        assembly ("memory-safe") {
+            fmpBefore := mload(0x40)
+            for { let i := 0 } lt(i, POISON_WORDS) { i := add(i, 1) } {
+                mstore(add(fmpBefore, mul(i, 0x20)), add(0xF00D0000, i))
+            }
+        }
         uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
         uint256 fmpAfter;
         assembly ("memory-safe") {
             fmpAfter := mload(0x40)
+            for { let i := 0 } lt(i, POISON_WORDS) { i := add(i, 1) } {
+                mstore(add(captured, mul(i, 0x20)), mload(add(fmpBefore, mul(i, 0x20))))
+            }
         }
-        _capture(captured, fmpBefore);
 
         assertEq(extended.length, 2, "length");
         assertEq(extended[0], 0x11);
