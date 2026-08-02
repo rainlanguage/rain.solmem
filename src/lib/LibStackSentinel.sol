@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity ^0.8.25;
 
-import {Pointer} from "./LibPointer.sol";
+import {LibPointer, Pointer} from "./LibPointer.sol";
 
 /// Thrown when the sentinel tuple size is zero.
 error ZeroSentinelTupleSize();
@@ -18,6 +18,12 @@ error MissingSentinel(Sentinel sentinel);
 /// @param lower The lower stack pointer.
 /// @param upper The upper stack pointer.
 error InvalidStackBounds(Pointer lower, Pointer upper);
+
+/// Thrown when the top of the stack is above the allocated memory pointer, so
+/// the tuples array cannot be built without overwriting the stack it describes.
+/// @param upper The upper stack pointer.
+/// @param allocated The allocated memory pointer.
+error UnallocatedStack(Pointer upper, Pointer allocated);
 
 /// > In computer programming, a sentinel value (also referred to as a flag
 /// > value, trip value, rogue value, signal value, or dummy data)[1] is a
@@ -101,7 +107,17 @@ library LibStackSentinel {
     /// attempts to loop from infinity. There is no explicit underflow check but
     /// there is no way to underflow without reverting due to gas.
     ///
-    /// @param upper Pointer to the top of the stack range.
+    /// The tuples array is allocated at the allocated memory pointer and grows
+    /// upward from there, so a stack that extends above the allocated memory
+    /// pointer would be overwritten by the very array that references it. The
+    /// stack therefore MUST be within allocated memory. A stack that extends
+    /// above the allocated memory pointer and contains the sentinel WILL REVERT
+    /// with `UnallocatedStack`. The search for the sentinel only reads memory,
+    /// so the same stack without the sentinel in it reverts with
+    /// `MissingSentinel` instead.
+    ///
+    /// @param upper Pointer to the top of the stack range. MUST NOT be above
+    /// the allocated memory pointer.
     /// @param lower Pointer to the bottom of the stack range.
     /// @param sentinel The value to expect as the sentinel. MUST be present in
     /// the stack or `consumeSentinel` will revert. MUST NOT collide with valid
@@ -141,6 +157,16 @@ library LibStackSentinel {
                 revert InvalidStackBounds(lower, upper);
             }
             revert MissingSentinel(sentinel);
+        }
+
+        // The tuples array is allocated at the allocated memory pointer and
+        // grows upward, so a stack above the allocated memory pointer is
+        // overlapped and overwritten by the array that references it.
+        {
+            Pointer allocated = LibPointer.allocatedMemoryPointer();
+            if (Pointer.unwrap(upper) > Pointer.unwrap(allocated)) {
+                revert UnallocatedStack(upper, allocated);
+            }
         }
 
         // Second pass to build references _in order_ from the sentinel back up

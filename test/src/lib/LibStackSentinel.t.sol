@@ -11,7 +11,8 @@ import {
     Sentinel,
     MissingSentinel,
     ZeroSentinelTupleSize,
-    InvalidStackBounds
+    InvalidStackBounds,
+    UnallocatedStack
 } from "src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
@@ -280,8 +281,16 @@ contract LibStackSentinelTest is Test {
         Pointer lower;
         assembly ("memory-safe") {
             lower := mload(0x40)
+            // Allocate the one word stack so that it sits at or below the
+            // allocated memory pointer.
+            mstore(0x40, add(lower, 0x20))
             mstore(lower, sentinel)
         }
+
+        // The tuples array MUST be allocated exactly at the free memory
+        // pointer, i.e. with no gap between the prior allocation and the
+        // length slot of the tuples array.
+        Pointer expectedTuplesPointer = LibPointer.allocatedMemoryPointer();
 
         (Pointer sentinelPointer, Pointer tuplesPointer) =
             lower.consumeSentinelTuples(lower.unsafeAddWord(), sentinel, 2);
@@ -289,8 +298,85 @@ contract LibStackSentinelTest is Test {
         assertEq(tuplesPointer.unsafeReadWord(), 0);
         // A zero length tuples array is still allocated exactly at the free
         // memory pointer, and consumes exactly one word for its length.
-        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(lower));
+        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(expectedTuplesPointer));
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(tuplesPointer.unsafeAddWord()));
+        // The stack is left intact because the tuples array is built above it.
+        assertEq(lower.unsafeReadWord(), bytes32(Sentinel.unwrap(sentinel)));
+    }
+
+    /// Stages a stack at the allocated memory pointer WITHOUT allocating it,
+    /// exactly as a caller building a temporary structure above the free memory
+    /// pointer would. `consume` false reports the pointers that were staged
+    /// without consuming them. Both variants decode the same static argument
+    /// types so both see the same allocated memory pointer.
+    function consumeSentinelTuplesUnallocatedExternal(Sentinel sentinel, uint256 words, bool consume)
+        external
+        pure
+        returns (Pointer upper, Pointer allocated)
+    {
+        Pointer lower;
+        assembly ("memory-safe") {
+            allocated := mload(0x40)
+            lower := allocated
+            upper := add(lower, mul(words, 0x20))
+            mstore(lower, sentinel)
+        }
+        if (consume) {
+            (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
+            (sentinelPointer);
+            (tuplesPointer);
+        }
+    }
+
+    /// A stack above the allocated memory pointer is where the tuples array
+    /// that describes it would be built, so consuming it would overwrite it.
+    /// This is refused rather than returning a well formed array of corrupt
+    /// references.
+    function testConsumeSentinelTuplesUnallocatedStackError(Sentinel sentinel, uint8 tupleCount) external {
+        // An odd number of words puts the sentinel at the bottom of the stack
+        // in alignment with the 2 item tuples above it.
+        uint256 words = (uint256(tupleCount) % 8) * 2 + 1;
+
+        (Pointer upper, Pointer allocated) = this.consumeSentinelTuplesUnallocatedExternal(sentinel, words, false);
+        assertEq(Pointer.unwrap(upper), Pointer.unwrap(allocated) + words * 0x20);
+
+        vm.expectRevert(abi.encodeWithSelector(UnallocatedStack.selector, upper, allocated));
+        this.consumeSentinelTuplesUnallocatedExternal(sentinel, words, true);
+    }
+
+    /// A stack that ends exactly at the allocated memory pointer is entirely
+    /// within allocated memory, so it is consumed and the tuples array is built
+    /// directly above it, leaving the stack it references intact.
+    function testConsumeSentinelTuplesUpperAtAllocated(Sentinel sentinel, uint256 item0, uint256 item1) external pure {
+        vm.assume(Sentinel.unwrap(sentinel) != item0);
+        vm.assume(Sentinel.unwrap(sentinel) != item1);
+
+        Pointer lower;
+        assembly ("memory-safe") {
+            lower := mload(0x40)
+            mstore(0x40, add(lower, 0x60))
+            mstore(lower, sentinel)
+            mstore(add(lower, 0x20), item0)
+            mstore(add(lower, 0x40), item1)
+        }
+        Pointer upper = lower.unsafeAddWords(3);
+        assertEq(Pointer.unwrap(upper), Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
+
+        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
+        assertEq(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower));
+        assertEq(Pointer.unwrap(tuplesPointer), Pointer.unwrap(upper));
+
+        uint256[2][] memory tuples;
+        assembly ("memory-safe") {
+            tuples := tuplesPointer
+        }
+        assertEq(tuples.length, 1);
+        assertEq(tuples[0][0], item0);
+        assertEq(tuples[0][1], item1);
+        // The stack is left intact because the tuples array is built above it.
+        assertEq(lower.unsafeReadWord(), bytes32(Sentinel.unwrap(sentinel)));
+        assertEq(lower.unsafeAddWord().unsafeReadWord(), bytes32(item0));
+        assertEq(lower.unsafeAddWords(2).unsafeReadWord(), bytes32(item1));
     }
 
     function testConsumeSentinelTuplesGas0() external pure {
@@ -300,6 +386,9 @@ contract LibStackSentinelTest is Test {
         assembly ("memory-safe") {
             lower := mload(0x40)
             upper := add(lower, 0x20)
+            // Allocate the stack so that it sits at or below the allocated
+            // memory pointer.
+            mstore(0x40, upper)
             mstore(lower, sentinel)
         }
         (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
@@ -314,6 +403,9 @@ contract LibStackSentinelTest is Test {
         assembly ("memory-safe") {
             lower := mload(0x40)
             upper := add(lower, 0x60)
+            // Allocate the stack so that it sits at or below the allocated
+            // memory pointer.
+            mstore(0x40, upper)
             mstore(lower, sentinel)
         }
         (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
@@ -328,6 +420,9 @@ contract LibStackSentinelTest is Test {
         assembly ("memory-safe") {
             lower := mload(0x40)
             upper := add(lower, 0xa0)
+            // Allocate the stack so that it sits at or below the allocated
+            // memory pointer.
+            mstore(0x40, upper)
             mstore(lower, sentinel)
         }
         (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
@@ -342,6 +437,9 @@ contract LibStackSentinelTest is Test {
         assembly ("memory-safe") {
             lower := mload(0x40)
             upper := add(lower, 0xe0)
+            // Allocate the stack so that it sits at or below the allocated
+            // memory pointer.
+            mstore(0x40, upper)
             mstore(lower, sentinel)
         }
         (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, 2);
