@@ -3,13 +3,14 @@
 pragma solidity ^0.8.25;
 
 import {LibPointer, Pointer} from "./LibPointer.sol";
+import {UnalignedStackPointer} from "../error/ErrStackPointer.sol";
 
 /// Thrown when the sentinel tuple size is zero.
 error ZeroSentinelTupleSize();
 
 /// Thrown when the sentinel cannot be found. This can be because the sentinel
-/// was not in stack, but also if the upper pointer is below the lower, or the
-/// sentinel is in the stack but not aligned with the tuples size.
+/// was not in the stack, but also if the sentinel is in the stack but not
+/// aligned with the tuples size.
 /// @param sentinel The sentinel that was not found.
 error MissingSentinel(Sentinel sentinel);
 
@@ -107,6 +108,13 @@ library LibStackSentinel {
     /// attempts to loop from infinity. There is no explicit underflow check but
     /// there is no way to underflow without reverting due to gas.
     ///
+    /// The scan steps in whole words down from `upper`, so `lower` and `upper`
+    /// MUST be aligned WITH EACH OTHER to 32 bytes, i.e. the distance between
+    /// them MUST be a whole number of words. Neither pointer need be 32 byte
+    /// aligned in absolute terms, as a shared sub-word offset cancels out of
+    /// the distance. Pointers that are not word aligned with each other WILL
+    /// REVERT with `UnalignedStackPointer`.
+    ///
     /// The tuples array is allocated at the allocated memory pointer and grows
     /// upward from there, so a stack that extends above the allocated memory
     /// pointer would be overwritten by the very array that references it. The
@@ -116,7 +124,8 @@ library LibStackSentinel {
     /// so the same stack without the sentinel in it reverts with
     /// `MissingSentinel` instead.
     ///
-    /// @param upper Pointer to the top of the stack range. MUST NOT be above
+    /// @param upper Pointer to the top of the stack range. MUST NOT be below
+    /// `lower`, MUST be a whole number of words above it, and MUST NOT be above
     /// the allocated memory pointer.
     /// @param lower Pointer to the bottom of the stack range.
     /// @param sentinel The value to expect as the sentinel. MUST be present in
@@ -133,6 +142,16 @@ library LibStackSentinel {
     {
         if (n == 0) {
             revert ZeroSentinelTupleSize();
+        }
+        if (Pointer.unwrap(upper) < Pointer.unwrap(lower)) {
+            revert InvalidStackBounds(lower, upper);
+        }
+        // The scan steps in whole words down from `upper`, so an `upper` that
+        // is not a whole number of words above `lower` puts every probe and
+        // every tuple reference across the boundary of two of the caller's
+        // stack items.
+        if ((Pointer.unwrap(upper) - Pointer.unwrap(lower)) % 0x20 != 0) {
+            revert UnalignedStackPointer(lower, upper);
         }
 
         // Each tuple takes this much space in memory.
@@ -153,9 +172,6 @@ library LibStackSentinel {
 
         // We revert if the sentinel was not found.
         if (Pointer.unwrap(sentinelPointer) == 0) {
-            if (Pointer.unwrap(upper) < Pointer.unwrap(lower)) {
-                revert InvalidStackBounds(lower, upper);
-            }
             revert MissingSentinel(sentinel);
         }
 

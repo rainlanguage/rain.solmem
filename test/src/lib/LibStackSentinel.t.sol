@@ -6,6 +6,7 @@ import {Test} from "forge-std-1.16.1/src/Test.sol";
 
 import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
 import {LibUint256Array} from "src/lib/LibStackPointer.sol";
+import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
 import {
     LibStackSentinel,
     Sentinel,
@@ -33,6 +34,24 @@ contract LibStackSentinelTest is Test {
     function testConsumeSentinelTuplesNZeroError(uint256[] memory stack, Sentinel sentinel) external {
         vm.expectRevert(abi.encodeWithSelector(ZeroSentinelTupleSize.selector));
         this.externalConsumeSentinelTuplesStack(stack, sentinel, 0);
+    }
+
+    /// A zero tuple size is reported ahead of anything that is wrong with the
+    /// bounds.
+    function testConsumeSentinelTuplesNZeroErrorPrecedence(
+        Pointer upper,
+        uint8 words,
+        uint8 offsetSeed,
+        Sentinel sentinel
+    ) external {
+        // `lower` is above `upper` AND not a whole number of words from it, so
+        // both of the pointer guards would fire too.
+        uint256 distance = (uint256(words) * 0x20) + ((uint256(offsetSeed) % 0x1f) + 1);
+        vm.assume(Pointer.unwrap(upper) <= type(uint256).max - distance);
+        Pointer lower = Pointer.wrap(Pointer.unwrap(upper) + distance);
+
+        vm.expectRevert(abi.encodeWithSelector(ZeroSentinelTupleSize.selector));
+        this.consumeSentinelTuplesExternal(lower, upper, sentinel, 0);
     }
 
     function testConsumeSentinelTuplesMultiSize(
@@ -236,19 +255,121 @@ contract LibStackSentinelTest is Test {
         (tuplesPointer);
     }
 
-    function testConsumeSentinelTuplesUnderflowError(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
-        public
-    {
+    function testConsumeSentinelTuplesUnderflowError(Pointer lower, uint8 words, Sentinel sentinel, uint256 n) public {
         // If the sentinel is easy to collide with then it might just match and
         // not underflow, which defeats the purpose of the test.
         vm.assume(Sentinel.unwrap(sentinel) > type(uint128).max);
         vm.assume(Pointer.unwrap(lower) < n);
-        vm.assume(Pointer.unwrap(upper) > Pointer.unwrap(lower));
+        vm.assume(words > 0);
+        // `upper` is a whole number of words above `lower` so the scan runs
+        // rather than being refused as unaligned.
+        uint256 distance = uint256(words) * 0x20;
+        vm.assume(Pointer.unwrap(lower) <= type(uint256).max - distance);
+        Pointer upper = Pointer.wrap(Pointer.unwrap(lower) + distance);
 
         // Underflow will revert because it will run out of gas attempting to
         // loop over infinity.
         vm.expectRevert();
         this.consumeSentinelTuplesExternal(lower, upper, sentinel, n);
+    }
+
+    /// Two pointers that are not a whole number of words apart cannot describe
+    /// a stack of words, so the scan is refused.
+    function testConsumeSentinelTuplesUnalignedError(
+        Pointer lower,
+        uint8 words,
+        uint8 offsetSeed,
+        Sentinel sentinel,
+        uint256 n
+    ) public {
+        vm.assume(n > 0);
+        // Any sub word distance between the two pointers.
+        uint256 distance = (uint256(words) * 0x20) + ((uint256(offsetSeed) % 0x1f) + 1);
+        vm.assume(Pointer.unwrap(lower) <= type(uint256).max - distance);
+        Pointer upper = Pointer.wrap(Pointer.unwrap(lower) + distance);
+
+        vm.expectRevert(abi.encodeWithSelector(UnalignedStackPointer.selector, lower, upper));
+        this.consumeSentinelTuplesExternal(lower, upper, sentinel, n);
+    }
+
+    /// Lays out real memory such that the word stepped scan down from an
+    /// unaligned `upper` steps over the whole stack and lands on a sentinel
+    /// sitting below `lower`.
+    function consumeSentinelTuplesBelowLowerExternal(Sentinel sentinel) external pure returns (Pointer, Pointer) {
+        Pointer lower;
+        Pointer upper;
+        assembly ("memory-safe") {
+            let base := mload(0x40)
+            mstore(0x40, add(base, 0x100))
+            lower := add(base, 0x20)
+            // 0x30 is not a whole number of words.
+            upper := add(lower, 0x30)
+            // Zero the two words that are actually in the stack so nothing in
+            // range and nothing straddling them can match the sentinel.
+            mstore(lower, 0)
+            mstore(add(lower, 0x20), 0)
+            // The sentinel sits half a word below the bottom of the stack,
+            // exactly where the second probe of the scan reads.
+            mstore(sub(lower, 0x10), sentinel)
+        }
+        return lower.consumeSentinelTuples(upper, sentinel, 1);
+    }
+
+    function testConsumeSentinelTuplesBelowLower(Sentinel sentinel) external view {
+        vm.assume(Sentinel.unwrap(sentinel) != 0);
+
+        (bool success, bytes memory data) =
+            address(this).staticcall(abi.encodeCall(this.consumeSentinelTuplesBelowLowerExternal, (sentinel)));
+
+        assertFalse(success);
+        assertEq(data.length, 4 + 0x40);
+        bytes4 selector;
+        uint256 lower;
+        uint256 upper;
+        assembly ("memory-safe") {
+            selector := mload(add(data, 0x20))
+            lower := mload(add(data, 0x24))
+            upper := mload(add(data, 0x44))
+        }
+        assertEq(selector, UnalignedStackPointer.selector);
+        assertEq(upper - lower, 0x30);
+    }
+
+    /// Neither pointer needs to be aligned in absolute terms, only with each
+    /// other, so a sub word offset shared by both pointers builds tuples as
+    /// normal.
+    function testConsumeSentinelTuplesSharedSubWordOffset(
+        Sentinel sentinel,
+        uint8 offsetSeed,
+        uint256 item0,
+        uint256 item1
+    ) external pure {
+        vm.assume(Sentinel.unwrap(sentinel) != item0);
+        vm.assume(Sentinel.unwrap(sentinel) != item1);
+        uint256 offset = (uint256(offsetSeed) % 0x1f) + 1;
+
+        Pointer lower;
+        assembly ("memory-safe") {
+            let base := mload(0x40)
+            mstore(0x40, add(base, 0x100))
+            lower := add(base, offset)
+            mstore(lower, sentinel)
+            mstore(add(lower, 0x20), item0)
+            mstore(add(lower, 0x40), item1)
+        }
+
+        (Pointer sentinelPointer, Pointer tuplesPointer) =
+            lower.consumeSentinelTuples(lower.unsafeAddWords(3), sentinel, 1);
+
+        assertEq(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower));
+        assertEq(tuplesPointer.unsafeReadWord(), bytes32(uint256(2)));
+
+        uint256[1][] memory tuples;
+        assembly ("memory-safe") {
+            tuples := tuplesPointer
+        }
+        assertEq(tuples[0][0], item0);
+        assertEq(tuples[1][0], item1);
     }
 
     function testConsumeSentinelTuplesInitialStateUnderflowError(Pointer lower, Pointer upper, Sentinel sentinel)
