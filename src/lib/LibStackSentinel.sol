@@ -113,7 +113,8 @@ library LibStackSentinel {
     /// failure modes for a stride the stack cannot hold are NOT uniform:
     ///
     /// - A stride larger than the stack but no larger than `upper` steps the
-    ///   scan below `lower`, which ends the scan and reverts with
+    ///   scan below `lower` after its first probe, which ends the scan. Unless
+    ///   the sentinel is the top word of the stack, that reverts with
     ///   `MissingSentinel`.
     /// - A stride larger than `upper` steps the scan past zero and back to
     ///   `2**256 - size` above the cursor. For most strides that is an
