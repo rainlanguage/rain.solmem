@@ -15,6 +15,10 @@ contract LibUint256ArrayExtendTest is Test {
     // given.
     /// forge-config: default.fuzz.runs = 100
     function testExtendInline(uint256[] memory a, uint256[] memory b) public pure {
+        // Snapshot the extend array before the call so the expected value comes
+        // from data `unsafeExtend` cannot reach. Allocated before c so that c
+        // remains the most recent allocation.
+        uint256[] memory bBefore = LibUint256ArraySlow.copySlow(b);
         uint256[] memory c = new uint256[](a.length);
         for (uint256 i = 0; i < a.length; i++) {
             c[i] = a[i];
@@ -23,7 +27,8 @@ contract LibUint256ArrayExtendTest is Test {
         c = LibUint256Array.unsafeExtend(c, b);
         assertEq(cBefore, Pointer.unwrap(LibUint256Array.startPointer(c)), "inline path not taken");
 
-        assertEq(c, LibUint256ArraySlow.extendSlow(a, b));
+        assertEq(b, bBefore, "extend mutated");
+        assertEq(c, LibUint256ArraySlow.extendSlow(a, bBefore));
     }
 
     // This code path hits extension with allocation due to b sitting behind c.
@@ -31,6 +36,9 @@ contract LibUint256ArrayExtendTest is Test {
     // a pointer that differs from the one it was given.
     /// forge-config: default.fuzz.runs = 100
     function testExtendAllocate(uint256[] memory a, uint256[] memory b) public pure {
+        // Snapshot the extend array before the call so the expected value comes
+        // from data `unsafeExtend` cannot reach.
+        uint256[] memory aBefore = LibUint256ArraySlow.copySlow(a);
         uint256[] memory c = new uint256[](b.length);
         for (uint256 i = 0; i < b.length; i++) {
             c[i] = b[i];
@@ -39,7 +47,8 @@ contract LibUint256ArrayExtendTest is Test {
         b = LibUint256Array.unsafeExtend(b, a);
         assertNotEq(bBefore, Pointer.unwrap(LibUint256Array.startPointer(b)), "allocate path not taken");
 
-        assertEq(b, LibUint256ArraySlow.extendSlow(c, a));
+        assertEq(a, aBefore, "extend mutated");
+        assertEq(b, LibUint256ArraySlow.extendSlow(c, aBefore));
     }
 
     /// Extending by an EMPTY array copies nothing, so both code paths leave

@@ -15,6 +15,10 @@ contract LibBytes32ArrayExtendTest is Test {
     // given.
     /// forge-config: default.fuzz.runs = 100
     function testExtendInline(bytes32[] memory a, bytes32[] memory b) public pure {
+        // Snapshot the extend array before the call so the expected value comes
+        // from data `unsafeExtend` cannot reach. Allocated before c so that c
+        // remains the most recent allocation.
+        bytes32[] memory bBefore = LibBytes32ArraySlow.copySlow(b);
         bytes32[] memory c = new bytes32[](a.length);
         for (uint256 i = 0; i < a.length; i++) {
             c[i] = a[i];
@@ -23,7 +27,8 @@ contract LibBytes32ArrayExtendTest is Test {
         c = LibBytes32Array.unsafeExtend(c, b);
         assertEq(cBefore, Pointer.unwrap(LibBytes32Array.startPointer(c)), "inline path not taken");
 
-        assertEq(c, LibBytes32ArraySlow.extendSlow(a, b));
+        assertEq(b, bBefore, "extend mutated");
+        assertEq(c, LibBytes32ArraySlow.extendSlow(a, bBefore));
     }
 
     // This code path hits extension with allocation due to b sitting behind c.
@@ -31,6 +36,9 @@ contract LibBytes32ArrayExtendTest is Test {
     // a pointer that differs from the one it was given.
     /// forge-config: default.fuzz.runs = 100
     function testExtendAllocate(bytes32[] memory a, bytes32[] memory b) public pure {
+        // Snapshot the extend array before the call so the expected value comes
+        // from data `unsafeExtend` cannot reach.
+        bytes32[] memory aBefore = LibBytes32ArraySlow.copySlow(a);
         bytes32[] memory c = new bytes32[](b.length);
         for (uint256 i = 0; i < b.length; i++) {
             c[i] = b[i];
@@ -39,7 +47,8 @@ contract LibBytes32ArrayExtendTest is Test {
         b = LibBytes32Array.unsafeExtend(b, a);
         assertNotEq(bBefore, Pointer.unwrap(LibBytes32Array.startPointer(b)), "allocate path not taken");
 
-        assertEq(b, LibBytes32ArraySlow.extendSlow(c, a));
+        assertEq(a, aBefore, "extend mutated");
+        assertEq(b, LibBytes32ArraySlow.extendSlow(c, aBefore));
     }
 
     /// Extending by an EMPTY array copies nothing, so both code paths leave

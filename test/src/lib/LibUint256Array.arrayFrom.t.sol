@@ -167,6 +167,11 @@ contract LibUint256ArrayArrayFromTest is Test {
     }
 
     function testArrayFromATail(uint256 a, uint256[] memory tail) public pure {
+        // The expected value is built from a snapshot taken before the call, so
+        // `arrayFrom` scribbling on `tail` cannot feed the same scribbles to the
+        // reference implementation.
+        uint256[] memory tailBefore = tail.copySlow();
+
         bytes32 afterAllocated;
         assembly ("memory-safe") {
             afterAllocated := mload(mload(0x40))
@@ -181,7 +186,8 @@ contract LibUint256ArrayArrayFromTest is Test {
 
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertEq(array, a.arrayFromSlow(tail));
+        assertEq(tail, tailBefore, "tail mutated");
+        assertEq(array, a.arrayFromSlow(tailBefore));
     }
 
     function testArrayFromATailGas0() public pure returns (uint256[] memory) {
@@ -193,6 +199,11 @@ contract LibUint256ArrayArrayFromTest is Test {
     }
 
     function testArrayFromABTail(uint256 a, uint256 b, uint256[] memory tail) public pure {
+        // The expected value is built from a snapshot taken before the call, so
+        // `arrayFrom` scribbling on `tail` cannot feed the same scribbles to the
+        // reference implementation.
+        uint256[] memory tailBefore = tail.copySlow();
+
         bytes32 afterAllocated;
         assembly ("memory-safe") {
             afterAllocated := mload(mload(0x40))
@@ -205,7 +216,8 @@ contract LibUint256ArrayArrayFromTest is Test {
         assertEq(bytes32(0), afterAllocated);
         assertEq(Pointer.unwrap(LibPointer.allocatedMemoryPointer()), Pointer.unwrap(array.endPointer()));
         assertEq(Pointer.unwrap(array.endPointer()) - Pointer.unwrap(array.dataPointer()), array.length * 0x20);
-        assertEq(array, a.arrayFromSlow(b, tail));
+        assertEq(tail, tailBefore, "tail mutated");
+        assertEq(array, a.arrayFromSlow(b, tailBefore));
     }
 
     function testArrayFromABTailGas0() public pure returns (uint256[] memory) {
