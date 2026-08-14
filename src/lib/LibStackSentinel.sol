@@ -108,9 +108,10 @@ library LibStackSentinel {
     ///
     /// `n` is scaled to a byte stride in checked Solidity, so an `n` too large
     /// to scale (`n > type(uint256).max / 0x20`) WILL REVERT with an arithmetic
-    /// overflow panic. That is the only bound on `n`. There is no check that
-    /// the stack is large enough to hold whole tuples of that stride, and the
-    /// failure modes for a stride the stack cannot hold are NOT uniform:
+    /// overflow panic. Together with `n != 0` that is the only bound on `n`.
+    /// There is no check that the stack is large enough to hold whole tuples of
+    /// that stride, and the failure modes for a stride the stack cannot hold
+    /// are NOT uniform:
     ///
     /// - A stride larger than the stack but no larger than `upper` steps the
     ///   scan below `lower` after its first probe, which ends the scan. Unless
