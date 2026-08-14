@@ -124,6 +124,18 @@ library LibBytes32ArraySlow {
         return array;
     }
 
+    /// Copy an array into a freshly allocated array of the same length. Used to
+    /// snapshot an input before handing it to an implementation under test, so
+    /// that expected values can be derived from data the implementation cannot
+    /// reach.
+    function copySlow(bytes32[] memory a) internal pure returns (bytes32[] memory) {
+        bytes32[] memory b = new bytes32[](a.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+        return b;
+    }
+
     /// Slow implementation of truncate for testing purposes.
     function truncateSlow(bytes32[] memory a, uint256 newLength) internal pure returns (bytes32[] memory) {
         bytes32[] memory b = new bytes32[](newLength);
