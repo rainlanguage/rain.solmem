@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {Test, stdError} from "forge-std-1.16.1/src/Test.sol";
 import {LibMatrixFlattenWrapHarness} from "test/src/lib/LibMatrixFlattenWrapHarness.sol";
 
 /// Reproduces issue #62 for `LibUint256Matrix` and its byte identical
@@ -29,7 +29,13 @@ import {LibMatrixFlattenWrapHarness} from "test/src/lib/LibMatrixFlattenWrapHarn
 /// Every assertion lives in the success branch of a `try`, so any fix that
 /// rejects a count it cannot scale to bytes takes the empty `catch` branch and
 /// passes, whether that is a checked multiply, a checked sum, or an explicit
-/// bound with a custom error.
+/// bound with a custom error. The guard that landed satisfies them unchanged.
+///
+/// The two `RevertsWithArithmeticPanic` tests at the end are the exception, and
+/// deliberately so. `itemCount`'s guard hand rolls its revert data in assembly
+/// instead of getting it from the compiler, so the encoding is something to
+/// assert rather than assume: a wrongly encoded revert still reverts, and every
+/// `catch` above would still be satisfied by it.
 contract LibMatrixFlattenWrapTest is Test {
     /// `2**251` is the exact point at which `count * 0x20` wraps.
     uint256 internal constant WRAP_PERIOD = 1 << 251;
@@ -162,5 +168,21 @@ contract LibMatrixFlattenWrapTest is Test {
             returnedSuccessfully = true;
         } catch {}
         assertFalse(returnedSuccessfully, "premise: a non wrapping oversized inner length is expected to fail loudly");
+    }
+
+    /// `itemCount`'s overflow guard writes its own `Panic(uint256)` revert data
+    /// with `mstore`/`revert` in assembly. Nothing above distinguishes that from
+    /// a revert carrying garbage, so the encoding is pinned here: it must be
+    /// exactly the arithmetic overflow panic that checked Solidity produces.
+    function testUint256ItemCountOverflowRevertsWithArithmeticPanic() external {
+        vm.expectRevert(stdError.arithmeticError);
+        harness.uint256ItemCount(1 << 255, 1 << 255);
+    }
+
+    /// `testUint256ItemCountOverflowRevertsWithArithmeticPanic` for the
+    /// `bytes32` twin, which hand rolls the same encoding separately.
+    function testBytes32ItemCountOverflowRevertsWithArithmeticPanic() external {
+        vm.expectRevert(stdError.arithmeticError);
+        harness.bytes32ItemCount(1 << 255, 1 << 255);
     }
 }

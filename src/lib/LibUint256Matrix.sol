@@ -105,29 +105,34 @@ library LibUint256Matrix {
     /// arrays. Normally `matrix.length` only returns the number of internal
     /// arrays, not the total number of items in the matrix.
     ///
-    /// The running total is accumulated in checked arithmetic, so a matrix
-    /// whose sub array length words sum to more than `type(uint256).max`
-    /// reverts with an arithmetic panic instead of wrapping to a total that is
-    /// smaller than one of the sub arrays it is totalling. That is only
-    /// reachable for length words that do not describe real allocations, as
-    /// every real item costs 32 bytes of memory.
+    /// The running total is guarded against overflow, so a matrix whose sub
+    /// array length words sum to more than `type(uint256).max` reverts with an
+    /// arithmetic panic instead of wrapping to a total that is smaller than one
+    /// of the sub arrays it is totalling. That is only reachable for length
+    /// words that do not describe real allocations, as every real item costs 32
+    /// bytes of memory.
     /// @param matrix The matrix to count the items of.
     /// @return count The total number of items across every sub array.
     function itemCount(uint256[][] memory matrix) internal pure returns (uint256 count) {
-        uint256 cursor;
-        uint256 end;
         assembly ("memory-safe") {
-            cursor := add(matrix, 0x20)
-            end := add(cursor, mul(mload(matrix), 0x20))
-        }
+            let cursor := add(matrix, 0x20)
+            let end := add(cursor, mul(mload(matrix), 0x20))
 
-        while (cursor < end) {
-            uint256 subCount;
-            assembly ("memory-safe") {
-                subCount := mload(mload(cursor))
+            for {} lt(cursor, end) {} {
+                let subCount := mload(mload(cursor))
+                count := add(count, subCount)
+                // A total that is smaller than the part just added to it
+                // wrapped. Revert with `Panic(uint256)` code 0x11, byte for
+                // byte what checked Solidity arithmetic produces for an
+                // overflow. Memory 0x00 to 0x40 is scratch space, so writing
+                // the revert data there is memory safe.
+                if lt(count, subCount) {
+                    mstore(0x00, 0x4e487b71)
+                    mstore(0x20, 0x11)
+                    revert(0x1c, 0x24)
+                }
+                cursor := add(cursor, 0x20)
             }
-            count += subCount;
-            cursor += 0x20;
         }
     }
 
