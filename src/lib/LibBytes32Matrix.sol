@@ -104,15 +104,30 @@ library LibBytes32Matrix {
     /// Counts the total number of items in the matrix across all internal
     /// arrays. Normally `matrix.length` only returns the number of internal
     /// arrays, not the total number of items in the matrix.
+    ///
+    /// The running total is accumulated in checked arithmetic, so a matrix
+    /// whose sub array length words sum to more than `type(uint256).max`
+    /// reverts with an arithmetic panic instead of wrapping to a total that is
+    /// smaller than one of the sub arrays it is totalling. That is only
+    /// reachable for length words that do not describe real allocations, as
+    /// every real item costs 32 bytes of memory.
+    /// @param matrix The matrix to count the items of.
+    /// @return count The total number of items across every sub array.
     function itemCount(bytes32[][] memory matrix) internal pure returns (uint256 count) {
+        uint256 cursor;
+        uint256 end;
         assembly ("memory-safe") {
-            let cursor := add(matrix, 0x20)
-            let end := add(cursor, mul(mload(matrix), 0x20))
+            cursor := add(matrix, 0x20)
+            end := add(cursor, mul(mload(matrix), 0x20))
+        }
 
-            for {} lt(cursor, end) {} {
-                count := add(count, mload(mload(cursor)))
-                cursor := add(cursor, 0x20)
+        while (cursor < end) {
+            uint256 subCount;
+            assembly ("memory-safe") {
+                subCount := mload(mload(cursor))
             }
+            count += subCount;
+            cursor += 0x20;
         }
     }
 
@@ -121,14 +136,30 @@ library LibBytes32Matrix {
     /// the allocation if a flat array is needed. This is because 2-dimensional
     /// arrays are stored as a length-prefixed array of pointers to 1-dimensional
     /// arrays, not as a contiguous block of memory.
+    ///
+    /// The item count is scaled to a size in bytes with checked arithmetic, so
+    /// a matrix whose total item count cannot be scaled reverts with an
+    /// arithmetic panic. A scaling that wrapped would size the allocation from
+    /// one number while the length word stamped on the result is another,
+    /// handing back an ordinary `bytes32[]` whose declared length far exceeds
+    /// the memory reserved for it. Solidity's own bounds check trusts that
+    /// length word, so such an array is a read and write primitive over the
+    /// rest of memory.
+    ///
+    /// The per sub array scaling in the copy loop needs no guard of its own.
+    /// The checked scaling above bounds the total at `type(uint256).max /
+    /// 0x20`, and no sub array can declare more items than the total it was
+    /// summed into, so scaling a sub array length cannot wrap either.
     /// @param matrix The matrix to flatten.
     /// @return array The flattened array.
     function flatten(bytes32[][] memory matrix) internal pure returns (bytes32[] memory) {
         uint256 length = itemCount(matrix);
+        uint256 dataSize = length * 0x20;
+
         bytes32[] memory array;
         assembly ("memory-safe") {
             array := mload(0x40)
-            mstore(0x40, add(array, add(0x20, mul(length, 0x20))))
+            mstore(0x40, add(array, add(0x20, dataSize)))
             mstore(array, length)
 
             let cursor := add(matrix, 0x20)
