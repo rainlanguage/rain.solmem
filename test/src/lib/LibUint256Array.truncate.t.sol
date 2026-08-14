@@ -41,6 +41,38 @@ contract LibUint256ArrayTruncateTest is Test {
         this.truncateExternal(a, newLength);
     }
 
+    /// `array.length + 1` is the first REJECTED length, for every array length
+    /// including zero. `testTruncateError` fuzzes `newLength` over the whole
+    /// uint256 range under `newLength > a.length`, so it essentially never
+    /// lands on the bound itself; this pins it exactly.
+    function testTruncateOneTooLongReverts(uint256[] memory a) public {
+        uint256 length = a.length;
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, length, length + 1));
+        this.truncateExternal(a, length + 1);
+    }
+
+    /// The empty array cannot be truncated to one. The degenerate case of the
+    /// bound, where `array.length + 1` is also the smallest nonzero length.
+    function testTruncateEmptyToOneReverts() public {
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, 0, 1));
+        this.truncateExternal(new uint256[](0), 1);
+    }
+
+    /// `array.length` is the largest ACCEPTED length — the other side of the
+    /// bound — and truncating to it is a no-op that retains every item.
+    function testTruncateToOwnLengthAccepted(uint256[] memory a) public pure {
+        uint256 length = a.length;
+        uint256[] memory b = new uint256[](length);
+        for (uint256 i = 0; i < length; i++) {
+            b[i] = a[i];
+        }
+
+        LibUint256Array.truncate(a, length);
+
+        assertEq(a.length, length, "length");
+        assertEq(a, b);
+    }
+
     function testTruncateGas0() public pure {
         LibUint256Array.truncate(LibUint256Array.arrayFrom(1, 2, 3), 1);
     }

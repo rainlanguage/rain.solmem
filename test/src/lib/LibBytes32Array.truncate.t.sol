@@ -41,6 +41,42 @@ contract LibBytes32ArrayTruncateTest is Test {
         this.truncateExternal(a, newLength);
     }
 
+    /// `array.length + 1` is the first REJECTED length, for every array length
+    /// including zero. `testTruncateError` fuzzes `newLength` over the whole
+    /// uint256 range under `newLength > a.length`, so it essentially never
+    /// lands on the bound itself; this pins it exactly.
+    function testTruncateOneTooLongReverts(bytes32[] memory a) public {
+        uint256 length = a.length;
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, length, length + 1));
+        this.truncateExternal(a, length + 1);
+    }
+
+    /// The empty array cannot be truncated to one. The degenerate case of the
+    /// bound, where `array.length + 1` is also the smallest nonzero length.
+    function testTruncateEmptyToOneReverts() public {
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, 0, 1));
+        this.truncateExternal(new bytes32[](0), 1);
+    }
+
+    /// `array.length` is the largest ACCEPTED length — the other side of the
+    /// bound — and truncating to it is a no-op that neither allocates nor
+    /// disturbs any item.
+    function testTruncateToOwnLengthAccepted(bytes32[] memory a) public pure {
+        uint256 length = a.length;
+        bytes32[] memory b = new bytes32[](length);
+        for (uint256 i = 0; i < length; i++) {
+            b[i] = a[i];
+        }
+
+        Pointer allocatedBefore = LibPointer.allocatedMemoryPointer();
+        LibBytes32Array.truncate(a, length);
+        Pointer allocatedAfter = LibPointer.allocatedMemoryPointer();
+        assertEq(Pointer.unwrap(allocatedBefore), Pointer.unwrap(allocatedAfter), "truncate allocated");
+
+        assertEq(a.length, length, "length");
+        assertEq(a, b);
+    }
+
     function testTruncateGas0() public pure {
         LibBytes32Array.truncate(
             LibBytes32Array.arrayFrom(bytes32(uint256(1)), bytes32(uint256(2)), bytes32(uint256(3))), 1
