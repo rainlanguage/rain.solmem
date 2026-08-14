@@ -127,14 +127,27 @@ library LibStackPointer {
     /// this function do not underflow the original array. Specifically that
     /// `length` is not greater than the number of items in the array below
     /// `pointer`.
+    /// The header is positioned by scaling `length` to bytes in checked
+    /// Solidity, so a `length` too large to scale (`length * 0x20 + 0x20`
+    /// exceeding `type(uint256).max`) reverts with an arithmetic overflow
+    /// panic. Without that, the scaling would wrap while the length word
+    /// written to memory would not, and the two halves of the same expression
+    /// would disagree: the header would be placed as if `length mod 2**251`
+    /// items were requested while the length word claimed `length`. Solidity's
+    /// own bounds check on the returned array trusts that length word, so the
+    /// forged array would license reads and writes across the whole heap from
+    /// callers containing no assembly at all.
     /// @param pointer The stack pointer to read the values below into an
     /// array.
     /// @param length The number of values to include in the returned array.
     /// @return head The value that was overwritten with the length.
     /// @return tail The array constructed from the stack memory.
     function unsafeList(Pointer pointer, uint256 length) internal pure returns (bytes32 head, bytes32[] memory tail) {
+        // Scaled in checked Solidity so that the offset the header is placed at
+        // and the length word written into it cannot disagree.
+        uint256 offset = 0x20 + length * 0x20;
         assembly ("memory-safe") {
-            tail := sub(pointer, add(0x20, mul(length, 0x20)))
+            tail := sub(pointer, offset)
             head := mload(tail)
             mstore(tail, length)
         }
