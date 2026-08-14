@@ -153,8 +153,12 @@ library LibUint256Matrix {
     ///
     /// The per sub array scaling in the copy loop needs no guard of its own.
     /// The checked scaling above bounds the total at `type(uint256).max /
-    /// 0x20`, and no sub array can declare more items than the total it was
-    /// summed into, so scaling a sub array length cannot wrap either.
+    /// 0x20`, and because `itemCount` sums without wrapping, no sub array
+    /// declares more items than that total, so scaling a sub array length
+    /// cannot wrap either. The copy loop re-reads those same length words and
+    /// cannot itself have disturbed them, as it only ever writes above the free
+    /// memory pointer as it stood on entry and every allocated sub array is
+    /// below it.
     /// @param matrix The matrix to flatten.
     /// @return array The flattened array.
     function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
