@@ -21,11 +21,11 @@ contract LibStackSentinelTest is Test {
     using LibPointer for Pointer;
     using LibStackSentinel for Pointer;
 
-    /// An underflowing scan MUST die from gas exhaustion, which spends every
-    /// unit of gas forwarded to it. Every typed error the library can raise
-    /// costs a few thousand gas at most, so a call that spends all of this
-    /// cannot have taken a typed error path.
-    uint256 internal constant UNDERFLOW_GAS = 1_000_000;
+    /// A cap on the gas forwarded to a scan that is expected to fail, so that a
+    /// failure which exhausts gas burns a bounded amount instead of the whole
+    /// test's budget. This is a property of the harness. It asserts nothing
+    /// about the implementation and no test may read a claim out of it.
+    uint256 internal constant SCAN_GAS_CAP = 1_000_000;
 
     function externalConsumeSentinelTuplesStack(uint256[] memory stack, Sentinel sentinel, uint256 n)
         external
@@ -258,36 +258,61 @@ contract LibStackSentinelTest is Test {
     function consumeSentinelTuplesRawExternal(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
         external
         pure
+        returns (Pointer sentinelPointer, Pointer tuplesPointer)
     {
-        (Pointer sentinelPointer, Pointer tuplesPointer) = lower.consumeSentinelTuples(upper, sentinel, n);
-        (sentinelPointer);
-        (tuplesPointer);
+        return lower.consumeSentinelTuples(upper, sentinel, n);
     }
 
-    /// The library documents that an underflowing cursor cannot silently
-    /// succeed: it wraps to near `2**256` and the evm runs out of gas the
-    /// moment it tries to read there. Gas exhaustion is the only failure mode
-    /// that returns EMPTY revert data and consumes all the forwarded gas, so
-    /// both are asserted. Every typed error the library can raise returns at
-    /// least a 4 byte selector and refunds the gas it did not spend, so no
-    /// typed error can satisfy either assertion, let alone both.
-    function testConsumeSentinelTuplesUnderflowError(
+    /// The safety property the library rests on, stated once and asserted
+    /// nowhere else: a scan whose cursor steps outside the range it was given
+    /// MUST NOT be reported as a success. A `sentinelPointer` outside
+    /// `[lower, upper)` is an answer about memory the caller never described,
+    /// and a caller consuming down to it reads whatever else lives there.
+    ///
+    /// HOW such a scan fails is NOT part of the property and MUST NOT be
+    /// pinned. Gas exhaustion on an unaddressable read, an arithmetic panic and
+    /// a typed `MissingSentinel` all satisfy it equally, and an implementation
+    /// that traded one for another would still be safe. A test that demanded
+    /// empty revert data, or a full burn of the forwarded gas, would forbid
+    /// strictly better implementations while proving nothing extra about
+    /// safety.
+    function assertScanCannotSucceedSilently(bool success, Pointer lower, Pointer upper, Pointer sentinelPointer)
+        internal
+        pure
+    {
+        if (success) {
+            assertGe(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower), "sentinel reported from below the range");
+            assertLt(
+                Pointer.unwrap(sentinelPointer), Pointer.unwrap(upper), "sentinel reported from at or above the range"
+            );
+        }
+    }
+
+    /// Every draw derives bounds and an `n` whose byte stride is strictly
+    /// greater than `upper`, so the FIRST decrement of a cursor that starts at
+    /// `upper` steps past zero. Every draw is therefore a genuine underflow,
+    /// derived rather than assumed: the assumption this test replaced compared
+    /// a byte address against a tuple count, so it admitted draws that never
+    /// underflowed at all and were satisfied by an ordinary missing sentinel.
+    function testConsumeSentinelTuplesUnderflowCannotSucceedSilently(
         Sentinel sentinel,
         uint8 lowerWords,
         uint8 rangeWords,
         uint8 excessTuples
     ) public {
-        // If the sentinel is easy to collide with then it might just match and
-        // not underflow, which defeats the purpose of the test.
+        // A sentinel that is easy to collide with could match one of the words
+        // the scan reads, ending the scan before it underflows.
         vm.assume(Sentinel.unwrap(sentinel) > type(uint128).max);
 
-        // The range sits above the free memory pointer in untouched (therefore
-        // zero, therefore never the sentinel) memory, so the scan reaches the
-        // underflow rather than terminating early or dying on the first read.
-        // The bounds guards all pass: `upper` is above `lower` and a whole
-        // number of words above it, so the scan runs. The stack lies above the
-        // allocated memory pointer, but that is only checked once a sentinel
-        // has been found, which never happens here.
+        // `0x80` is where the callee frame's free memory pointer starts, and
+        // that frame decodes only static arguments, so it never allocates. At
+        // `lowerWords == 0` the range therefore starts exactly AT the free
+        // memory pointer and at higher draws above it; either way every word
+        // the scan reads is untouched, therefore zero, therefore never the
+        // sentinel. The bounds guards all pass: `upper` is above `lower` and a
+        // whole number of words above it, so the scan runs. The range is at or
+        // above the allocated memory pointer, but that is only checked once a
+        // sentinel has been found, which never happens here.
         Pointer lower = Pointer.wrap(0x80 + uint256(lowerWords) * 0x20);
         Pointer upper = Pointer.wrap(Pointer.unwrap(lower) + (uint256(rangeWords) + 1) * 0x20);
 
@@ -296,15 +321,112 @@ contract LibStackSentinelTest is Test {
         // zero. `n` stays small enough that `n * 0x20` itself cannot wrap.
         uint256 n = Pointer.unwrap(upper) / 0x20 + 1 + uint256(excessTuples);
 
-        uint256 gasBefore = gasleft();
-        (bool success, bytes memory data) = address(this).call{gas: UNDERFLOW_GAS}(
+        (bool success, bytes memory data) = address(this).call{gas: SCAN_GAS_CAP}(
             abi.encodeCall(this.consumeSentinelTuplesRawExternal, (lower, upper, sentinel, n))
         );
-        uint256 gasUsed = gasBefore - gasleft();
 
-        assertFalse(success, "underflow MUST revert");
-        assertEq(data.length, 0, "underflow MUST exhaust gas, not raise a typed error");
-        assertGe(gasUsed, UNDERFLOW_GAS, "underflow MUST consume all the gas it is given");
+        Pointer sentinelPointer;
+        if (success) {
+            (sentinelPointer,) = abi.decode(data, (Pointer, Pointer));
+        }
+        assertScanCannotSucceedSilently(success, lower, upper, sentinelPointer);
+    }
+
+    /// The number of words staged above `upper` by
+    /// `consumeSentinelTuplesAboveUpperExternal`, and therefore the exclusive
+    /// bound on the `plantWords` it accepts. `plantWords == 0` plants at
+    /// `upper` itself, the very first word outside the range, which is the
+    /// boundary the range check has to get exactly right.
+    uint256 internal constant ABOVE_UPPER_WORDS = 4;
+
+    /// Stages a four word stack at the callee's allocated memory pointer with
+    /// TWO sentinels: one at `lower`, in range, which an honest scan finds, and
+    /// one `plantWords` words above `upper`, out of range, which only a scan
+    /// that walked out of the top of the range can reach. The whole staged
+    /// region including the out of range plant is allocated, so reads there are
+    /// cheap and the `UnallocatedStack` guard cannot fire on `upper`.
+    ///
+    /// A cursor stepping UP one word at a time probes `upper` and then each
+    /// word above it in turn, so a scan with a stride congruent to `-32` walks
+    /// onto the plant wherever it is put. Returns the staged bounds alongside
+    /// whatever the scan reported, so the caller can check the answer against
+    /// the range without having to predict the callee's free memory pointer.
+    function consumeSentinelTuplesAboveUpperExternal(Sentinel sentinel, uint256 n, uint256 plantWords)
+        external
+        pure
+        returns (Pointer lower, Pointer upper, Pointer sentinelPointer)
+    {
+        require(plantWords < ABOVE_UPPER_WORDS, "plant outside the staged region");
+        assembly ("memory-safe") {
+            lower := mload(0x40)
+            upper := add(lower, 0x80)
+            // Allocate the stack AND every word above it that the plant or the
+            // upward walk can reach, so `upper` is below the allocated memory
+            // pointer and the plant is inside allocated memory.
+            let end := add(upper, mul(ABOVE_UPPER_WORDS, 0x20))
+            mstore(0x40, end)
+            // Zero the whole staged region so the only two words that can
+            // match the sentinel are the two planted next.
+            for { let cursor := lower } lt(cursor, end) { cursor := add(cursor, 0x20) } { mstore(cursor, 0) }
+            mstore(lower, sentinel)
+            mstore(add(upper, mul(plantWords, 0x20)), sentinel)
+        }
+        (sentinelPointer,) = lower.consumeSentinelTuples(upper, sentinel, n);
+    }
+
+    /// `type(uint256).max / 0x20` is `2**251 - 1`, the largest `n` that scales
+    /// to a byte stride at all, and it does NOT overflow: the product is
+    /// `2**256 - 32`, which is congruent to `-32`. `sub(cursor, size)` with
+    /// that stride steps the cursor UP one word per iteration, so the scan
+    /// walks straight out of the top of the range the caller supplied and keeps
+    /// reading. This test does not care whether that is caught by a bound on
+    /// the stride, by a check on the answer, or by dying on gas — only that the
+    /// out of range sentinel is never handed back as this stack's sentinel.
+    function testConsumeSentinelTuplesNegativeStrideCannotSucceedSilently(Sentinel sentinel) public {
+        // A zero sentinel would also match the zeroed words in range, which
+        // would end the scan before it left the range.
+        vm.assume(Sentinel.unwrap(sentinel) != 0);
+
+        uint256 n = type(uint256).max / 0x20;
+        // The premise of the whole test: this `n` is inside the scalable range,
+        // so no overflow check anywhere can be what saves the scan.
+        assertEq(n * 0x20, type(uint256).max - 31, "the stride MUST NOT overflow");
+
+        // Control, on the same staged layout: an honest single word stride
+        // finds the in range sentinel at `lower` and reports it. Without this a
+        // property that only forbids a bad success would be satisfied
+        // vacuously by an implementation that never succeeds at all.
+        (bool controlSuccess, bytes memory controlData) = address(this).call{gas: SCAN_GAS_CAP}(
+            abi.encodeCall(this.consumeSentinelTuplesAboveUpperExternal, (sentinel, 1, 0))
+        );
+        assertTrue(controlSuccess, "the staged layout MUST be able to succeed");
+        (Pointer controlLower, Pointer controlUpper, Pointer controlSentinelPointer) =
+            abi.decode(controlData, (Pointer, Pointer, Pointer));
+        assertEq(
+            Pointer.unwrap(controlSentinelPointer),
+            Pointer.unwrap(controlLower),
+            "control MUST find the in range sentinel"
+        );
+        assertScanCannotSucceedSilently(controlSuccess, controlLower, controlUpper, controlSentinelPointer);
+
+        // Sweep the plant from `upper` itself outward, so the word immediately
+        // outside the range is covered as well as ones further out.
+        for (uint256 plantWords = 0; plantWords < ABOVE_UPPER_WORDS; plantWords++) {
+            //slither-disable-next-line calls-loop
+            (bool success, bytes memory data) = address(this).call{gas: SCAN_GAS_CAP}(
+                abi.encodeCall(this.consumeSentinelTuplesAboveUpperExternal, (sentinel, n, plantWords))
+            );
+
+            // The staging is deterministic, so a call that failed staged the
+            // same bounds the control reported.
+            Pointer lower = controlLower;
+            Pointer upper = controlUpper;
+            Pointer sentinelPointer;
+            if (success) {
+                (lower, upper, sentinelPointer) = abi.decode(data, (Pointer, Pointer, Pointer));
+            }
+            assertScanCannotSucceedSilently(success, lower, upper, sentinelPointer);
+        }
     }
 
     /// Two pointers that are not a whole number of words apart cannot describe

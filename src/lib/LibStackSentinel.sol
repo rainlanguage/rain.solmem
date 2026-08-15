@@ -10,7 +10,9 @@ error ZeroSentinelTupleSize();
 
 /// Thrown when the sentinel cannot be found. This can be because the sentinel
 /// was not in the stack, but also if the sentinel is in the stack but not
-/// aligned with the tuples size.
+/// aligned with the tuples size, or if the scan stepped outside the stack
+/// bounds and only found a sentinel valued word out there, which is not the
+/// caller's sentinel.
 /// @param sentinel The sentinel that was not found.
 error MissingSentinel(Sentinel sentinel);
 
@@ -68,8 +70,10 @@ type Sentinel is uint256;
 ///
 /// - Using any sentinel value other than `0`, such as the hash of some well
 ///   known string, will avoid misinterpreting unallocated memory as a sentinel.
-/// - Any underflows manifest as either a "missing sentinel" or infinite loop,
-///   which will revert either way due to an explicit check or gas limits.
+/// - Any underflow manifests as either a "missing sentinel" or a read from an
+///   unaddressable position, which revert due to an explicit check and gas
+///   limits respectively. An underflowing scan can never report a sentinel
+///   from outside the range it was given.
 /// - Given that a sentinel is `uint256` it is possible to construct a value that
 ///   is very unlikely to collide with real values in the implementation domain.
 /// - Well behaved integrity checks will ensure the memory for the sentinel is
@@ -103,10 +107,21 @@ library LibStackSentinel {
     /// an empty/optional/absent value they MAY provided a sentinel for a zero
     /// length array and the calling contract SHOULD handle this.
     ///
-    /// If `lower` is smaller than `n` it is possible that this will underflow
-    /// which will result in the evm immediately running out of gas as it
-    /// attempts to loop from infinity. There is no explicit underflow check but
-    /// there is no way to underflow without reverting due to gas.
+    /// The scan steps down from `upper` in strides of `n * 0x20` BYTES, so a
+    /// stride that the remaining range cannot be stepped down by steps the
+    /// cursor past zero and wraps it. There is no explicit underflow check and
+    /// the resulting failure is deliberately not uniform: almost every wrapped
+    /// cursor lands at an unaddressable position, where the read exhausts the
+    /// whole gas allowance of the call frame, but a stride within a few words
+    /// of `2**256` wraps to a small step UPWARD and the scan reads above
+    /// `upper` instead.
+    ///
+    /// What IS guaranteed is that an underflowing scan cannot silently
+    /// succeed. `sentinelPointer` is ALWAYS within `[lower, upper)`, and a scan
+    /// that walked out of that range reverts with `MissingSentinel` exactly as
+    /// a scan that found nothing at all does. Gas exhaustion is therefore a
+    /// tolerated mechanism rather than a promise: a caller MUST NOT depend on
+    /// WHICH of these failures it gets, only that it gets one.
     ///
     /// The scan steps in whole words down from `upper`, so `lower` and `upper`
     /// MUST be aligned WITH EACH OTHER to 32 bytes, i.e. the distance between
@@ -132,8 +147,8 @@ library LibStackSentinel {
     /// the stack or `consumeSentinel` will revert. MUST NOT collide with valid
     /// stack items (or be cryptographically improbable to do so).
     /// @param n The number of items per tuple.
-    /// @return sentinelPointer Pointer to the sentinel that was found. A missing
-    /// sentinel WILL REVERT.
+    /// @return sentinelPointer Pointer to the sentinel that was found, ALWAYS
+    /// within `[lower, upper)`. A missing sentinel WILL REVERT.
     /// @return tuplesPointer Pointer to the n-item tuples array that was built.
     function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
         internal
@@ -160,7 +175,19 @@ library LibStackSentinel {
         // First pass to find the sentinel.
         assembly ("memory-safe") {
             size := mul(n, 0x20)
-            // An underflow here always results in a revert due to gas.
+            // `size` is a whole number of words even where the multiply wraps,
+            // and the bounds are word aligned with each other, so the cursor is
+            // always congruent to `lower` modulo 32 no matter how many times it
+            // wraps. `gt(cursor, lower)` therefore implies
+            // `cursor >= lower + 0x20`, and the probe at `sub(cursor, 0x20)`
+            // can never fall below `lower`.
+            //
+            // A stride the cursor cannot be stepped down by wraps past zero.
+            // Almost always that is an unaddressable position and the read
+            // exhausts gas, but a stride within a few words of `2**256` wraps
+            // to a small step UPWARD and the scan walks out above `upper`,
+            // reading memory the caller never described. The `>= upper` check
+            // below is what stops that being reported as a success.
             for { let cursor := upper } gt(cursor, lower) { cursor := sub(cursor, size) } {
                 let potentialSentinelPointer := sub(cursor, 0x20)
                 if eq(mload(potentialSentinelPointer), sentinel) {
@@ -170,8 +197,13 @@ library LibStackSentinel {
             }
         }
 
-        // We revert if the sentinel was not found.
-        if (Pointer.unwrap(sentinelPointer) == 0) {
+        // We revert if the sentinel was not found, and equally if it was
+        // "found" outside the range the caller described. A scan whose cursor
+        // wrapped upward reads above `upper`, where a sentinel valued word
+        // belongs to whoever owns that memory, not to this stack. The probe can
+        // never fall below `lower` (see the scan loop), so the upper bound is
+        // the whole of the range check.
+        if (Pointer.unwrap(sentinelPointer) == 0 || Pointer.unwrap(sentinelPointer) >= Pointer.unwrap(upper)) {
             revert MissingSentinel(sentinel);
         }
 
