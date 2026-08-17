@@ -66,6 +66,25 @@ contract LibArraySelfExtendTest is Test {
         assertEq(extended[5], 0x33);
     }
 
+    /// The extend array is only left alone if it does not overlap base.
+    /// Passing one array as both is total overlap: base's length word IS
+    /// extend's length word, so rewriting it to the combined length is visible
+    /// through the alias, which is what the NatSpec's precondition is about.
+    function testSelfExtendUint256MutatesTheSharedLengthWord() external pure {
+        uint256[] memory a = new uint256[](3);
+
+        a.unsafeExtend(a);
+
+        uint256 lengthAfter;
+        // Deliberately NOT ("memory-safe"): the length word is rewritten by
+        // assembly the compiler cannot see through, so a read it is free to
+        // fold back to the allocated constant would pass either way.
+        assembly {
+            lengthAfter := mload(a)
+        }
+        assertEq(lengthAfter, 6, "aliased length word not rewritten");
+    }
+
     function testSelfExtendBytes32WritesNothingAboveFreeMemoryPointer() external pure {
         bytes32[] memory a = new bytes32[](3);
         a[0] = bytes32(uint256(0x11));
@@ -102,5 +121,20 @@ contract LibArraySelfExtendTest is Test {
         assertEq(extended[1], bytes32(uint256(0xBB)));
         assertEq(extended[2], bytes32(uint256(0xAA)));
         assertEq(extended[3], bytes32(uint256(0xBB)));
+    }
+
+    /// As above for `bytes32[]`: total overlap shares the length word, so the
+    /// combined length is visible through the alias.
+    function testSelfExtendBytes32MutatesTheSharedLengthWord() external pure {
+        bytes32[] memory a = new bytes32[](2);
+
+        a.unsafeExtend(a);
+
+        uint256 lengthAfter;
+        // Deliberately NOT ("memory-safe") — see above.
+        assembly {
+            lengthAfter := mload(a)
+        }
+        assertEq(lengthAfter, 4, "aliased length word not rewritten");
     }
 }

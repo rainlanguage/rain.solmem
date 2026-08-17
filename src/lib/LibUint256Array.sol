@@ -314,8 +314,15 @@ library LibUint256Array {
     /// caller between the allocating and non-allocating logic due to subtle
     /// optimisation reasons. To use this function safely THE CALLER MUST NOT USE
     /// THE BASE ARRAY AND MUST USE THE RETURNED ARRAY ONLY. It is safe to use
-    /// the extend array after calling this function as it is never mutated, it
-    /// is only copied from.
+    /// the extend array after calling this function PROVIDED IT DOES NOT OVERLAP
+    /// THE BASE ARRAY, as a non overlapping extend array is only copied from and
+    /// never written to. Overlap is neither checked nor rejected. An extend
+    /// array that overlaps base is part of the base array, so it carries the
+    /// base array's obligation and must not be used after the call either.
+    /// Passing one array as both base and extend is total overlap: the two
+    /// share a single length word, so writing the combined length through base
+    /// writes it through extend as well, and the extend array's length reads
+    /// back as the combined length.
     ///
     /// @param b The base integer array that will be extended by `e`.
     /// @param e The extend integer array that extends `b`.
