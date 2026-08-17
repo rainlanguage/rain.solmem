@@ -9,8 +9,6 @@ import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
 /// @notice Things we want to do carefully and efficiently with bytes32 arrays
 /// that Solidity doesn't give us native tools for.
 library LibBytes32Array {
-    using LibBytes32Array for bytes32[];
-
     /// Pointer to the start (length prefix) of a `bytes32[]`.
     /// @param array The array to get the start pointer of.
     /// @return pointer The pointer to the start of `array`.
