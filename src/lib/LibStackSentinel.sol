@@ -107,14 +107,18 @@ library LibStackSentinel {
     /// an empty/optional/absent value they MAY provided a sentinel for a zero
     /// length array and the calling contract SHOULD handle this.
     ///
-    /// The scan steps down from `upper` in strides of `n * 0x20` BYTES, so a
-    /// stride that the remaining range cannot be stepped down by steps the
-    /// cursor past zero and wraps it. There is no explicit underflow check and
-    /// the resulting failure is deliberately not uniform: almost every wrapped
-    /// cursor lands at an unaddressable position, where the read exhausts the
-    /// whole gas allowance of the call frame, but a stride within a few words
-    /// of `2**256` wraps to a small step UPWARD and the scan reads above
-    /// `upper` instead.
+    /// `n` is scaled to a byte stride in checked Solidity, so an `n` too large
+    /// to scale (`n > type(uint256).max / 0x20`) WILL REVERT with an arithmetic
+    /// overflow panic. Together with `n != 0` that is the only bound on `n`.
+    /// There is no check that the stack is large enough to hold whole tuples of
+    /// that stride, so the scan steps down from `upper` in strides of
+    /// `n * 0x20` BYTES and a stride that the remaining range cannot be stepped
+    /// down by steps the cursor past zero and wraps it. There is no explicit
+    /// underflow check and the resulting failure is deliberately not uniform:
+    /// almost every wrapped cursor lands at an unaddressable position, where
+    /// the read exhausts the whole gas allowance of the call frame, but a
+    /// stride within a few words of `2**256` wraps to a small step UPWARD and
+    /// the scan reads above `upper` instead.
     ///
     /// What IS guaranteed is that an underflowing scan cannot silently
     /// succeed. `sentinelPointer` is ALWAYS within `[lower, upper)`, and a scan
@@ -169,18 +173,21 @@ library LibStackSentinel {
             revert UnalignedStackPointer(lower, upper);
         }
 
-        // Each tuple takes this much space in memory.
-        uint256 size;
+        // Each tuple takes this much space in memory. Scaled in checked
+        // Solidity, so an `n` too large to express as a byte stride reverts
+        // with an arithmetic overflow panic rather than wrapping to a small
+        // stride and serving the request as if a much smaller `n` had been
+        // asked for.
+        uint256 size = n * 0x20;
 
         // First pass to find the sentinel.
         assembly ("memory-safe") {
-            size := mul(n, 0x20)
-            // `size` is a whole number of words even where the multiply wraps,
-            // and the bounds are word aligned with each other, so the cursor is
-            // always congruent to `lower` modulo 32 no matter how many times it
-            // wraps. `gt(cursor, lower)` therefore implies
-            // `cursor >= lower + 0x20`, and the probe at `sub(cursor, 0x20)`
-            // can never fall below `lower`.
+            // `size` is a whole number of words and the bounds are word
+            // aligned with each other, so the cursor is always congruent to
+            // `lower` modulo 32 no matter how many times it wraps.
+            // `gt(cursor, lower)` therefore implies `cursor >= lower + 0x20`,
+            // and the probe at `sub(cursor, 0x20)` can never fall below
+            // `lower`.
             //
             // A stride the cursor cannot be stepped down by wraps past zero.
             // Almost always that is an unaddressable position and the read
