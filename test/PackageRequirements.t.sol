@@ -67,9 +67,9 @@ contract PackageRequirementsTest is Test {
         revert("README.md has no Requirements section");
     }
 
-    /// The library name declared by the source at `path`, i.e. its basename
-    /// without the `.sol` extension. Rain sources are one contract per file,
-    /// named for the file.
+    /// The basename of `path` without its `.sol` extension. Rain sources are one
+    /// contract per file named for the file, so this is the name the README uses
+    /// to refer to that source.
     function libraryName(string memory path) internal pure returns (string memory) {
         string[] memory segments = vm.split(path, "/");
         return vm.split(segments[segments.length - 1], ".")[0];
