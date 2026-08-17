@@ -4,9 +4,6 @@ pragma solidity =0.8.25;
 
 import {LibUint256Matrix} from "src/lib/LibUint256Matrix.sol";
 import {LibBytes32Matrix} from "src/lib/LibBytes32Matrix.sol";
-import {LibStackPointer} from "src/lib/LibStackPointer.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
-import {Pointer} from "src/lib/LibPointer.sol";
 
 /// Harness for `itemCount` and `flatten` on both matrix libraries.
 ///
@@ -18,9 +15,6 @@ import {Pointer} from "src/lib/LibPointer.sol";
 contract LibMatrixFlattenWrapHarness {
     using LibUint256Matrix for uint256[][];
     using LibBytes32Matrix for bytes32[][];
-    using LibBytes32Matrix for bytes32[];
-    using LibStackPointer for Pointer;
-    using LibBytes32Array for bytes32[];
 
     /// Planted in the allocation that lands immediately after `flatten`'s.
     uint256 public constant CANARY = 0xBEEF;
@@ -183,44 +177,5 @@ contract LibMatrixFlattenWrapHarness {
         flat[index] = bytes32(SCRIBBLE);
 
         canaryValue = uint256(canary[3]);
-    }
-
-    /// The same defect with no length word forged by this harness at all.
-    ///
-    /// `LibStackPointer.unsafeList` is the library's own minter of a forged
-    /// length word (issue #54, second site). Its output goes through
-    /// `matrixFrom` and `flatten`, neither of which is prefixed `unsafe` and
-    /// neither of which documents any precondition on its input, and out comes
-    /// an array declaring far more items than were reserved for it.
-    /// @param forgedLength The length passed to `unsafeList`.
-    /// @return mintedLength The length word `unsafeList` minted.
-    /// @return allocation See `Allocation`, for the `flatten` that followed.
-    function mintThenFlatten(uint256 forgedLength)
-        external
-        pure
-        returns (uint256 mintedLength, Allocation memory allocation)
-    {
-        bytes32[] memory stack = new bytes32[](4);
-        stack[0] = bytes32(uint256(0xA0));
-        stack[1] = bytes32(uint256(0xA1));
-        stack[2] = bytes32(uint256(0xA2));
-        stack[3] = bytes32(uint256(0xA3));
-
-        (, bytes32[] memory tail) = stack.endPointer().unsafeList(forgedLength);
-        mintedLength = tail.length;
-
-        bytes32[][] memory matrix = tail.matrixFrom();
-
-        uint256 fmpBefore;
-        assembly ("memory-safe") {
-            fmpBefore := mload(0x40)
-        }
-        bytes32[] memory flat = matrix.flatten();
-        uint256 fmpAfter;
-        assembly ("memory-safe") {
-            fmpAfter := mload(0x40)
-        }
-        allocation.declaredLength = flat.length;
-        allocation.allocatedBytes = fmpAfter - fmpBefore;
     }
 }

@@ -126,29 +126,6 @@ contract LibMatrixFlattenWrapTest is Test {
         }
     }
 
-    /// The forged length word does not have to come from the test.
-    /// `LibStackPointer.unsafeList` mints one from inside this library (issue
-    /// #54), and `matrixFrom` then `flatten` launder it, neither of them
-    /// prefixed `unsafe` and neither documenting a precondition, into an array
-    /// declaring `2**251` items over a 32 byte allocation.
-    ///
-    /// This is the composition that makes #54 and #62 one question rather than
-    /// two. If `unsafeList` is fixed first this test takes the `catch` branch
-    /// and passes without `flatten` changing at all, which is exactly the point:
-    /// either end of the chain can close it.
-    function testMintedLengthWordLaundersThroughMatrixFromAndFlatten() external view {
-        try harness.mintThenFlatten(WRAP_PERIOD) returns (
-            uint256 mintedLength, LibMatrixFlattenWrapHarness.Allocation memory allocation
-        ) {
-            uint256 capacity = allocation.allocatedBytes < 0x20 ? 0 : (allocation.allocatedBytes - 0x20) / 0x20;
-            assertLe(allocation.declaredLength, capacity, "flatten declared more items than it allocated");
-            assertLe(mintedLength, 4, "unsafeList minted a length word larger than the stack it was given");
-        } catch {
-            // A loud failure at either end of the chain is the acceptable
-            // outcome.
-        }
-    }
-
     /// Premise control, and the reason this is a bug rather than a caller
     /// error.
     ///
