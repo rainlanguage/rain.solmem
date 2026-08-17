@@ -68,8 +68,11 @@ type Sentinel is uint256;
 ///
 /// - Using any sentinel value other than `0`, such as the hash of some well
 ///   known string, will avoid misinterpreting unallocated memory as a sentinel.
-/// - Any underflows manifest as either a "missing sentinel" or infinite loop,
-///   which will revert either way due to an explicit check or gas limits.
+/// - Most underflows manifest as either a "missing sentinel" or a read from an
+///   unaddressable position, which revert due to an explicit check and gas
+///   limits respectively. This is NOT universal: see the failure modes
+///   documented on `consumeSentinelTuples` for the strides that underflow to a
+///   position the scan can keep reading from.
 /// - Given that a sentinel is `uint256` it is possible to construct a value that
 ///   is very unlikely to collide with real values in the implementation domain.
 /// - Well behaved integrity checks will ensure the memory for the sentinel is
@@ -103,10 +106,28 @@ library LibStackSentinel {
     /// an empty/optional/absent value they MAY provided a sentinel for a zero
     /// length array and the calling contract SHOULD handle this.
     ///
-    /// If `lower` is smaller than `n` it is possible that this will underflow
-    /// which will result in the evm immediately running out of gas as it
-    /// attempts to loop from infinity. There is no explicit underflow check but
-    /// there is no way to underflow without reverting due to gas.
+    /// `n` is scaled to a byte stride in checked Solidity, so an `n` too large
+    /// to scale (`n > type(uint256).max / 0x20`) WILL REVERT with an arithmetic
+    /// overflow panic. Together with `n != 0` that is the only bound on `n`.
+    /// There is no check that the stack is large enough to hold whole tuples of
+    /// that stride, and the failure modes for a stride the stack cannot hold
+    /// are NOT uniform:
+    ///
+    /// - A stride larger than the stack but no larger than `upper` steps the
+    ///   scan below `lower` after its first probe, which ends the scan. Unless
+    ///   the sentinel is the top word of the stack, that reverts with
+    ///   `MissingSentinel`.
+    /// - A stride larger than `upper` steps the scan past zero and back to
+    ///   `2**256 - size` above the cursor. For most strides that is an
+    ///   unaddressable position and the read exhausts gas, but for a stride
+    ///   within a few words of `2**256` it is a small step UPWARD, and the scan
+    ///   then reads above `upper`, outside the range the caller supplied. Such
+    ///   a scan CAN find a sentinel valued word out of range and return a
+    ///   `sentinelPointer` above `upper` without reverting.
+    ///
+    /// So an out of range `n` is not guaranteed to fail loudly. The caller MUST
+    /// ensure the stack between `lower` and `upper` holds a whole number of `n`
+    /// item tuples above the sentinel.
     ///
     /// The scan steps in whole words down from `upper`, so `lower` and `upper`
     /// MUST be aligned WITH EACH OTHER to 32 bytes, i.e. the distance between
@@ -154,13 +175,22 @@ library LibStackSentinel {
             revert UnalignedStackPointer(lower, upper);
         }
 
-        // Each tuple takes this much space in memory.
-        uint256 size;
+        // Each tuple takes this much space in memory. Scaled in checked
+        // Solidity, so an `n` too large to express as a byte stride reverts
+        // with an arithmetic overflow panic rather than wrapping to a small
+        // stride and serving the request as if a much smaller `n` had been
+        // asked for.
+        uint256 size = n * 0x20;
 
         // First pass to find the sentinel.
         assembly ("memory-safe") {
-            size := mul(n, 0x20)
-            // An underflow here always results in a revert due to gas.
+            // `size` is a whole number of words and the stack is a whole number
+            // of words, so a stride that fits the stack walks `cursor` down to
+            // `lower` exactly. A stride that does not fit steps `cursor` below
+            // `lower` and the loop ends, unless the step underflows past zero,
+            // in which case `cursor` lands back at `add(cursor, sub(0, size))`
+            // and the scan continues from there. There is no explicit bound on
+            // where that lands, so the caller MUST size the stack for `n`.
             for { let cursor := upper } gt(cursor, lower) { cursor := sub(cursor, size) } {
                 let potentialSentinelPointer := sub(cursor, 0x20)
                 if eq(mload(potentialSentinelPointer), sentinel) {
