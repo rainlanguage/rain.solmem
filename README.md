@@ -20,6 +20,17 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 These libraries assume the caller knows what they're doing with memory. Out-of-
 bounds access, double-frees, and aliasing are the caller's responsibility.
 
+## Requirements
+
+- **solc.** Every source file declares `pragma solidity ^0.8.25;`.
+- **Cancun.** Build with `evm_version = "cancun"` or later, and deploy only to
+  chains that have activated cancun. Every copy path compiles to the `mcopy`
+  opcode: `LibMemCpy`, `LibUint256Array`/`LibBytes32Array` and
+  `LibUint256Matrix`/`LibBytes32Matrix`. A pre-cancun `evm_version` fails at
+  compile time. Cancun bytecode on a chain that has not activated cancun reverts
+  with `invalid opcode` at runtime, in every copy, extend, flatten and
+  `matrixFrom` path.
+
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):

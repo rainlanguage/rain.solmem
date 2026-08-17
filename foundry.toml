@@ -14,5 +14,13 @@ evm_version = "cancun"
 fuzz.runs = 2056
 libs = ["dependencies"]
 
+# `test/PackageRequirements.t.sol` reads these to assert that the requirements
+# stated in the shipped `README.md` match the config and sources they describe.
+fs_permissions = [
+  { access = "read", path = "./foundry.toml" },
+  { access = "read", path = "./README.md" },
+  { access = "read", path = "./src" },
+]
+
 [dependencies]
 forge-std = "1.16.1"
