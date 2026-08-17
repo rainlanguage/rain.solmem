@@ -41,6 +41,40 @@ contract PackageRequirementsTest is Test {
         );
     }
 
+    /// The README states the cancun floor because the sources emit `mcopy`, and
+    /// names the libraries that do. That naming rots in both directions: a
+    /// library that stops emitting `mcopy` overstates the floor, one that starts
+    /// understates which paths carry the runtime hazard. A source emits `mcopy`
+    /// if and only if the `Requirements` section names it.
+    function testRequirementsNameEveryMcopySource() external view {
+        string memory requirements = requirementsSection();
+        string[] memory sources = sourcePaths();
+        for (uint256 i = 0; i < sources.length; i++) {
+            bool emitsMcopy = vm.contains(vm.readFile(sources[i]), "mcopy");
+            bool named = vm.contains(requirements, string.concat("`", libraryName(sources[i]), "`"));
+            assertEq(named, emitsMcopy, sources[i]);
+        }
+    }
+
+    /// The body of the `Requirements` section of the README.
+    function requirementsSection() internal view returns (string memory) {
+        string[] memory sections = vm.split(vm.readFile("README.md"), "\n## ");
+        for (uint256 i = 0; i < sections.length; i++) {
+            if (vm.indexOf(sections[i], "Requirements") == 0) {
+                return sections[i];
+            }
+        }
+        revert("README.md has no Requirements section");
+    }
+
+    /// The library name declared by the source at `path`, i.e. its basename
+    /// without the `.sol` extension. Rain sources are one contract per file,
+    /// named for the file.
+    function libraryName(string memory path) internal pure returns (string memory) {
+        string[] memory segments = vm.split(path, "/");
+        return vm.split(segments[segments.length - 1], ".")[0];
+    }
+
     /// Path of every file under `src`, all of which ship in the package.
     function sourcePaths() internal view returns (string[] memory) {
         Vm.DirEntry[] memory entries = vm.readDir("src", type(uint64).max);
