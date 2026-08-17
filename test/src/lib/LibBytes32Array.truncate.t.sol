@@ -77,6 +77,25 @@ contract LibBytes32ArrayTruncateTest is Test {
         assertEq(a, b);
     }
 
+    /// `endPointer` is derived from the CURRENT length word, so it marks the end
+    /// of the allocation only for an array that has not been shrunk. `truncate`
+    /// leaks the tail, which leaves `endPointer` below the end of the memory
+    /// still reserved for the array.
+    function testEndPointerDivergesAfterTruncate() public pure {
+        bytes32[] memory a = new bytes32[](10);
+        // Read the free memory pointer before any assertion, as assertions
+        // allocate. Nothing has been allocated since `a`, so this is the end of
+        // its allocation.
+        uint256 allocationEnd = uint256(Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
+        uint256 endBefore = uint256(Pointer.unwrap(LibBytes32Array.endPointer(a)));
+
+        LibBytes32Array.truncate(a, 4);
+        uint256 endAfter = uint256(Pointer.unwrap(LibBytes32Array.endPointer(a)));
+
+        assertEq(endBefore, allocationEnd, "untruncated: endPointer is the end of the allocation");
+        assertEq(allocationEnd - endAfter, 6 * 0x20, "truncated: six words still allocated above endPointer");
+    }
+
     function testTruncateGas0() public pure {
         LibBytes32Array.truncate(
             LibBytes32Array.arrayFrom(bytes32(uint256(1)), bytes32(uint256(2)), bytes32(uint256(3))), 1
