@@ -27,6 +27,18 @@ bounds access, double-frees, and aliasing are the caller's responsibility.
   compile time; cancun bytecode on a chain without cancun reverts with
   `invalid opcode` at runtime.
 
+## Audit
+
+Protofire reviewed `src/` in January 2026. The report is in
+[`audit/protofire/`](audit/protofire/); the commits it reviewed and the files it
+covered are in [`audit/audits.json`](audit/audits.json).
+
+`src/` has moved since. To see by how much:
+
+```sh
+git diff --stat <reviewed-commit>..HEAD -- src/
+```
+
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):
