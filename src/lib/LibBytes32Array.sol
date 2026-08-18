@@ -243,7 +243,15 @@ library LibBytes32Array {
     /// @return array The new array.
     function arrayFrom(bytes32 a, bytes32[] memory tail) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 1)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 1)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -252,7 +260,7 @@ library LibBytes32Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -264,7 +272,15 @@ library LibBytes32Array {
     /// @return array The new array.
     function arrayFrom(bytes32 a, bytes32 b, bytes32[] memory tail) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 2)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 2)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -274,7 +290,7 @@ library LibBytes32Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
