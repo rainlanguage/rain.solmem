@@ -9,8 +9,8 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 | ------------------ | ------------------------------------------------------------------------- |
 | `LibPointer`       | Raw memory pointer arithmetic, with explicit `Pointer` user-defined type. |
 | `LibMemCpy`        | Word-aligned and byte-aligned `memcpy` between memory pointers.           |
-| `LibBytes`         | In-place mutation, slicing, and pointer-level access for `bytes`.         |
-| `LibUint256Array`  | Dynamic `uint256[]` operations: extend, copy, dedup-sort, truncate.       |
+| `LibBytes`         | In-place `truncate`, plus start/data/end/allocated pointers.              |
+| `LibUint256Array`  | `arrayFrom` literals, `unsafeExtend`, `truncate`, `reverse`, pointers.    |
 | `LibBytes32Array`  | Dynamic `bytes32[]` mirror of `LibUint256Array`.                          |
 | `LibUint256Matrix` | `uint256[][]` operations.                                                 |
 | `LibBytes32Matrix` | `bytes32[][]` operations.                                                 |
@@ -18,6 +18,22 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 
 These libraries assume the caller knows what they're doing with memory. Out-of-
 bounds access, double-frees, and aliasing are the caller's responsibility.
+
+## Errors
+
+| Error                   | Import from                     | Thrown by                                |
+| ----------------------- | ------------------------------- | ---------------------------------------- |
+| `TruncateError`         | `src/error/ErrBytes.sol`        | `LibBytes.truncate`                      |
+| `OutOfBoundsTruncate`   | `src/error/ErrUint256Array.sol` | `truncate` on both array libs            |
+| `UnalignedStackPointer` | `src/error/ErrStackPointer.sol` | `LibStackSentinel.consumeSentinelTuples` |
+| `ZeroSentinelTupleSize` | `src/lib/LibStackSentinel.sol`  | `LibStackSentinel.consumeSentinelTuples` |
+| `MissingSentinel`       | `src/lib/LibStackSentinel.sol`  | `LibStackSentinel.consumeSentinelTuples` |
+| `InvalidStackBounds`    | `src/lib/LibStackSentinel.sol`  | `LibStackSentinel.consumeSentinelTuples` |
+| `UnallocatedStack`      | `src/lib/LibStackSentinel.sol`  | `LibStackSentinel.consumeSentinelTuples` |
+
+`itemCount` and `flatten` on both matrix libs, and
+`LibStackSentinel.consumeSentinelTuples`, also revert with `Panic(uint256)` code
+`0x11` on arithmetic overflow.
 
 ## Requirements
 
