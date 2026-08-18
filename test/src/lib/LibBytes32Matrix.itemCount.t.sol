@@ -3,9 +3,9 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes32Matrix} from "src/lib/LibBytes32Matrix.sol";
-import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibBytes32MatrixSlow} from "test/lib/LibBytes32MatrixSlow.sol";
+import {LibBytes32Matrix} from "../../../src/lib/LibBytes32Matrix.sol";
+import {LibPointer, Pointer} from "../../../src/lib/LibPointer.sol";
+import {LibBytes32MatrixSlow} from "../../lib/LibBytes32MatrixSlow.sol";
 
 contract LibBytes32MatrixItemCountTest is Test {
     using LibBytes32Matrix for bytes32[][];

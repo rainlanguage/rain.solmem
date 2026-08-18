@@ -4,9 +4,9 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
+import {LibPointer, Pointer} from "../../../src/lib/LibPointer.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {UnalignedStackPointer} from "../../../src/error/ErrStackPointer.sol";
 import {
     LibStackSentinel,
     Sentinel,
@@ -14,7 +14,7 @@ import {
     ZeroSentinelTupleSize,
     InvalidStackBounds,
     UnallocatedStack
-} from "src/lib/LibStackSentinel.sol";
+} from "../../../src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];

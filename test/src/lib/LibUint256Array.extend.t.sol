@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
-import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
+import {LibUint256Array, Pointer} from "../../../src/lib/LibUint256Array.sol";
+import {LibUint256ArraySlow} from "../../lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayExtendTest is Test {
     // This code path hits the inline extension by ensuring that c is the most

@@ -3,10 +3,10 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
-import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
-import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
+import {LibUint256Array, Pointer} from "../../../src/lib/LibUint256Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
+import {OutOfBoundsTruncate} from "../../../src/error/ErrUint256Array.sol";
+import {LibUint256ArraySlow} from "../../lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayTruncateTest is Test {
     function truncateExternal(uint256[] memory a, uint256 newLength) external pure returns (uint256[] memory) {

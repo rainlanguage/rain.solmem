@@ -3,10 +3,10 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
-import {LibBytes32Matrix, LibPointer, Pointer} from "src/lib/LibBytes32Matrix.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
+import {LibBytes32Matrix, LibPointer, Pointer} from "../../../src/lib/LibBytes32Matrix.sol";
 
-import {LibBytes32MatrixSlow} from "test/lib/LibBytes32MatrixSlow.sol";
+import {LibBytes32MatrixSlow} from "../../lib/LibBytes32MatrixSlow.sol";
 
 contract LibBytes32ArrayMatrixFromTest is Test {
     using LibBytes32Array for bytes32;

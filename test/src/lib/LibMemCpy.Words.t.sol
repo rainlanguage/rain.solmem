@@ -4,9 +4,9 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibMemCpy} from "src/lib/LibMemCpy.sol";
-import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
+import {LibMemCpy} from "../../../src/lib/LibMemCpy.sol";
+import {LibUint256Array, Pointer} from "../../../src/lib/LibUint256Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
 
 contract LibMemCpyWordsTest is Test {
     using LibPointer for Pointer;

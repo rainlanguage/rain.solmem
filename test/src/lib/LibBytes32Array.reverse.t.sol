@@ -3,9 +3,9 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
-import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
+import {LibBytes32Array, Pointer} from "../../../src/lib/LibBytes32Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
+import {LibBytes32ArraySlow} from "../../lib/LibBytes32ArraySlow.sol";
 
 contract LibBytes32ArrayReverseTest is Test {
     /// Test that the reverse function works as expected according to the

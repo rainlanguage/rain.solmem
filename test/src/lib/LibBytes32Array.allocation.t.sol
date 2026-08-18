@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
+import {LibBytes32Array, Pointer} from "../../../src/lib/LibBytes32Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
 
 /// The existing `unsafeExtend` tests assert the CONTENTS of the extended array
 /// against a reference implementation. Contents alone cannot see the allocator

@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibBytes} from "src/lib/LibBytes.sol";
+import {LibPointer, Pointer} from "../../../src/lib/LibPointer.sol";
+import {LibBytes} from "../../../src/lib/LibBytes.sol";
 
 contract LibPointerTest is Test {
     using LibPointer for Pointer;

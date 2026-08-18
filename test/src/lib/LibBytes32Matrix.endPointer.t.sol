@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
-import {LibBytes32Matrix, LibPointer, Pointer} from "src/lib/LibBytes32Matrix.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
+import {LibBytes32Matrix, LibPointer, Pointer} from "../../../src/lib/LibBytes32Matrix.sol";
 
 /// `endPointer` on a matrix is one word past the last REFERENCE, which is not
 /// the end of any allocation. The NatSpec on `endPointer` states where the inner
