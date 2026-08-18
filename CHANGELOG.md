@@ -34,27 +34,30 @@ consumer.
 ## 0.1.11
 
 - **Breaking:** `LibStackPointer` removed.
-- `consumeSentinelTuples` reverts when the sentinel it finds lies at or above
+- `consumeSentinelTuples` reverts with `MissingSentinel` when the sentinel it
+  finds lies at or above
   `upper`, which a stride within a few words of `2**256` reached by wrapping
   the cursor upward out of the caller's range.
 
 ## 0.1.10
 
-- The unchecked `mul(_, 0x20)` word scaling in `LibStackSentinel` and
-  `LibStackPointer` reverts on wrap instead of scaling to a wrong stride.
+- Word scaling in `LibStackSentinel` and `LibStackPointer` is done in checked
+  Solidity, so a tuple count or length too large to scale reverts with an
+  overflow panic instead of wrapping to a small stride.
 - `itemCount` reverts on overflow, and `flatten` no longer mints an array whose
   declared length exceeds its allocation. Both matrix libraries.
 
 ## 0.1.9
 
-- `consumeSentinelTuples` reverts when the stack lies at or above the free
-  memory pointer, where allocating the tuples array overwrote the stack being
-  read.
+- `consumeSentinelTuples` reverts with `UnallocatedStack` when `upper` is above
+  the allocated memory pointer, where the tuples array is allocated over the
+  stack it references.
 
 ## 0.1.8
 
-- `consumeSentinelTuples` reverts when `lower` and `upper` are not word aligned
-  with each other, which returned tuples assembled from straddled words.
+- `consumeSentinelTuples` reverts with `UnalignedStackPointer` when `lower` and
+  `upper` are not word aligned with each other, which returned tuples assembled
+  from straddled words.
 
 ## 0.1.7
 
