@@ -2,13 +2,13 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibUint256Matrix, LibPointer, Pointer} from "src/lib/LibUint256Matrix.sol";
+import {Test} from "forge-std-1.16.2/src/Test.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibUint256Matrix, LibPointer, Pointer} from "../../../src/lib/LibUint256Matrix.sol";
 
-import {LibUint256MatrixSlow} from "test/lib/LibUint256MatrixSlow.sol";
+import {LibUint256MatrixSlow} from "../../lib/LibUint256MatrixSlow.sol";
 
-contract LibUint256ArrayMatrixFromTest is Test {
+contract LibUint256MatrixMatrixFromTest is Test {
     using LibUint256Array for uint256;
     using LibUint256Matrix for uint256[];
     using LibUint256MatrixSlow for uint256[];

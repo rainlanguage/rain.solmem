@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
+import {Test} from "forge-std-1.16.2/src/Test.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
 
 /// Extending an array by itself. Base and extend are then ONE array, so the in
 /// place path would rewrite the length word both of them read through, mutating
@@ -214,17 +214,20 @@ contract LibArraySelfExtendTest is Test {
     }
 
     function testSelfExtendBytes32DoublesTheContents() external pure {
-        bytes32[] memory a = new bytes32[](2);
-        a[0] = bytes32(uint256(0xAA));
-        a[1] = bytes32(uint256(0xBB));
+        bytes32[] memory a = new bytes32[](3);
+        a[0] = bytes32(uint256(0x11));
+        a[1] = bytes32(uint256(0x22));
+        a[2] = bytes32(uint256(0x33));
 
         bytes32[] memory extended = a.unsafeExtend(a);
 
-        assertEq(extended.length, 4);
-        assertEq(extended[0], bytes32(uint256(0xAA)));
-        assertEq(extended[1], bytes32(uint256(0xBB)));
-        assertEq(extended[2], bytes32(uint256(0xAA)));
-        assertEq(extended[3], bytes32(uint256(0xBB)));
+        assertEq(extended.length, 6);
+        assertEq(extended[0], bytes32(uint256(0x11)));
+        assertEq(extended[1], bytes32(uint256(0x22)));
+        assertEq(extended[2], bytes32(uint256(0x33)));
+        assertEq(extended[3], bytes32(uint256(0x11)));
+        assertEq(extended[4], bytes32(uint256(0x22)));
+        assertEq(extended[5], bytes32(uint256(0x33)));
     }
 
     function testSelfExtendBytes32AllocatesExactly() external pure {

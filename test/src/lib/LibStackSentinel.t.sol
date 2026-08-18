@@ -2,19 +2,18 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
+import {LibPointer, Pointer} from "../../../src/lib/LibPointer.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {UnalignedStackPointer} from "../../../src/error/ErrStackPointer.sol";
 import {
-    LibStackSentinel,
-    Sentinel,
-    MissingSentinel,
-    ZeroSentinelTupleSize,
     InvalidStackBounds,
-    UnallocatedStack
-} from "src/lib/LibStackSentinel.sol";
+    MissingSentinel,
+    UnallocatedStack,
+    ZeroSentinelTupleSize
+} from "../../../src/error/ErrStackSentinel.sol";
+import {LibStackSentinel, Sentinel} from "../../../src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];
@@ -255,6 +254,39 @@ contract LibStackSentinelTest is Test {
         (tuplesPointer);
     }
 
+    /// An occurrence of the sentinel VALUE above the terminator that is off the
+    /// tuple stride is tuple data, not a terminator, and is built into the
+    /// tuples untouched.
+    function testConsumeSentinelTuplesOffStrideSentinelIsData(Sentinel sentinel, uint256 item) external pure {
+        vm.assume(Sentinel.unwrap(sentinel) != item);
+
+        Pointer lower;
+        assembly ("memory-safe") {
+            lower := mload(0x40)
+            mstore(0x40, add(lower, 0xa0))
+            // The scan probes two words apart down from `upper`, so it lands on
+            // words 4, 2 and 0. Word 2 terminates it and the sentinel at word 3
+            // is never probed.
+            mstore(lower, item)
+            mstore(add(lower, 0x20), item)
+            mstore(add(lower, 0x40), sentinel)
+            mstore(add(lower, 0x60), sentinel)
+            mstore(add(lower, 0x80), item)
+        }
+
+        (Pointer sentinelPointer, Pointer tuplesPointer) =
+            lower.consumeSentinelTuples(lower.unsafeAddWords(5), sentinel, 2);
+        assertEq(Pointer.unwrap(sentinelPointer), Pointer.unwrap(lower.unsafeAddWords(2)));
+
+        uint256[2][] memory tuples;
+        assembly ("memory-safe") {
+            tuples := tuplesPointer
+        }
+        assertEq(tuples.length, 1);
+        assertEq(tuples[0][0], Sentinel.unwrap(sentinel));
+        assertEq(tuples[0][1], item);
+    }
+
     function consumeSentinelTuplesRawExternal(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
         external
         pure
@@ -489,6 +521,42 @@ contract LibStackSentinelTest is Test {
         }
         assertEq(selector, UnalignedStackPointer.selector);
         assertEq(upper - lower, 0x30);
+    }
+
+    /// Stages a four word stack, zeroed, with the sentinel in the word
+    /// immediately below `lower`. Four words is a whole number of strides for
+    /// every `n` the caller passes, so a cursor that is not stopped at `lower`
+    /// steps exactly onto it and probes the word below.
+    function consumeSentinelTuplesBelowLowerNotFoundExternal(Sentinel sentinel, uint256 n)
+        external
+        pure
+        returns (Pointer, Pointer)
+    {
+        Pointer lower;
+        assembly ("memory-safe") {
+            let base := mload(0x40)
+            mstore(0x40, add(base, 0xc0))
+            mstore(base, sentinel)
+            lower := add(base, 0x20)
+            mstore(lower, 0)
+            mstore(add(lower, 0x20), 0)
+            mstore(add(lower, 0x40), 0)
+            mstore(add(lower, 0x60), 0)
+        }
+        return lower.consumeSentinelTuples(lower.unsafeAddWords(4), sentinel, n);
+    }
+
+    /// A sentinel below `lower` is outside the range the caller described and is
+    /// not this stack's sentinel. The sentinel is non zero, so the boundary is
+    /// pinned without a zero sentinel colliding with zeroed memory.
+    function testConsumeSentinelTuplesBelowLowerNotFound(Sentinel sentinel) external {
+        vm.assume(Sentinel.unwrap(sentinel) != 0);
+
+        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
+        this.consumeSentinelTuplesBelowLowerNotFoundExternal(sentinel, 1);
+
+        vm.expectRevert(abi.encodeWithSelector(MissingSentinel.selector, sentinel));
+        this.consumeSentinelTuplesBelowLowerNotFoundExternal(sentinel, 2);
     }
 
     /// Neither pointer needs to be aligned in absolute terms, only with each

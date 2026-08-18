@@ -2,12 +2,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibBytes32Array, Pointer} from "src/lib/LibBytes32Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
+import {LibBytes32Array, Pointer} from "../../../src/lib/LibBytes32Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
 
-import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
+import {LibBytes32ArraySlow} from "../../lib/LibBytes32ArraySlow.sol";
 
 contract LibBytes32ArrayArrayFromTest is Test {
     using LibBytes32Array for bytes32;

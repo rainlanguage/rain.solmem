@@ -3,14 +3,12 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
-/// @title Uint256Array
+/// @title LibUint256Array
 /// @notice Things we want to do carefully and efficiently with uint256 arrays
 /// that Solidity doesn't give us native tools for.
 library LibUint256Array {
-    using LibUint256Array for uint256[];
-
     /// Pointer to the start (length prefix) of a `uint256[]`.
     /// @param array The array to get the start pointer of.
     /// @return pointer The pointer to the start of `array`.
@@ -245,7 +243,15 @@ library LibUint256Array {
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256[] memory tail) internal pure returns (uint256[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 1)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 1)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -254,7 +260,7 @@ library LibUint256Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -266,7 +272,15 @@ library LibUint256Array {
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256 b, uint256[] memory tail) internal pure returns (uint256[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 2)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 2)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -276,20 +290,19 @@ library LibUint256Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
-    /// Solidity provides no way to change the length of in-memory arrays but
-    /// it also does not deallocate memory ever. It is always safe to shrink an
-    /// array that has already been allocated, with the caveat that the
-    /// truncated items will effectively become inaccessible regions of memory.
-    /// That is to say, we deliberately "leak" the truncated items, but that is
-    /// no worse than Solidity's native behaviour of leaking everything always.
-    /// The array is MUTATED in place so there is no return value and there is
-    /// no new allocation or copying of data either.
-    /// @param array The array to truncate.
-    /// @param newLength The new length of the array after truncation.
+    /// Shrinks an array by mutating its length word directly. The truncated
+    /// items are leaked, i.e. they become inaccessible regions of memory that
+    /// are never deallocated.
+    /// Reverts with `OutOfBoundsTruncate(array.length, newLength)` if
+    /// `newLength` is greater than `array.length`. Truncation can only shrink.
+    /// @param array The array to truncate. MUTATED in place, so there is no
+    /// return value and no new allocation.
+    /// @param newLength The new length of `array` after truncation. MUST NOT
+    /// be greater than `array.length`.
     function truncate(uint256[] memory array, uint256 newLength) internal pure {
         if (newLength > array.length) {
             revert OutOfBoundsTruncate(array.length, newLength);
@@ -299,17 +312,18 @@ library LibUint256Array {
         }
     }
 
-    /// Extends `base_` with `extend_` by allocating only an additional
-    /// `extend_.length` words onto `base_` and copying only `extend_` if
-    /// possible. If `base_` is large this MAY be significantly more efficient
-    /// than allocating `base_.length + extend_.length` for an entirely new array
-    /// and copying both `base_` and `extend_` into the new array one item at a
-    /// time in Solidity.
+    /// Extends `baseArray` with `extendArray` by allocating only an additional
+    /// `extendArray.length` words onto `baseArray` and copying only
+    /// `extendArray` if possible. If `baseArray` is large this MAY be
+    /// significantly more efficient than allocating
+    /// `baseArray.length + extendArray.length` for an entirely new array and
+    /// copying both `baseArray` and `extendArray` into the new array one item
+    /// at a time in Solidity.
     ///
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
     /// there is allocated memory after the end of base then extension will
-    /// require copying both the base and extend arays to a new region of memory.
+    /// require copying both the base and extend arrays to a new region of memory.
     /// The caller is responsible for optimising code paths to avoid additional
     /// allocations.
     ///
@@ -329,10 +343,14 @@ library LibUint256Array {
     /// Both arrays MUST be valid solidity memory arrays, each owning the region
     /// its own length word describes.
     ///
-    /// @param b The base integer array that will be extended by `e`.
-    /// @param e The extend integer array that extends `b`.
-    /// @return extended The extended array of `b` extended by `e`.
-    function unsafeExtend(uint256[] memory b, uint256[] memory e) internal pure returns (uint256[] memory extended) {
+    /// @param baseArray The base array that will be extended by `extendArray`.
+    /// @param extendArray The extend array that extends `baseArray`.
+    /// @return extended `baseArray` extended by `extendArray`.
+    function unsafeExtend(uint256[] memory baseArray, uint256[] memory extendArray)
+        internal
+        pure
+        returns (uint256[] memory extended)
+    {
         assembly ("memory-safe") {
             // Slither doesn't recognise assembly function names as mixed case
             // even if they are.
@@ -382,7 +400,7 @@ library LibUint256Array {
                 }
             }
 
-            extended := extendInline(b, e)
+            extended := extendInline(baseArray, extendArray)
         }
     }
 

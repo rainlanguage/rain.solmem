@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test, stdError} from "forge-std-1.16.1/src/Test.sol";
-import {LibMatrixFlattenWrapHarness} from "test/src/lib/LibMatrixFlattenWrapHarness.sol";
+import {Test, stdError} from "forge-std-1.16.2/src/Test.sol";
+import {LibMatrixFlattenWrapHarness} from "./LibMatrixFlattenWrapHarness.sol";
 
 /// Reproduces issue #62 for `LibUint256Matrix` and its byte identical
 /// `LibBytes32Matrix` twin.

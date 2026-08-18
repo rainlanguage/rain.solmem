@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
-import {LibPointer} from "src/lib/LibPointer.sol";
+import {LibUint256Array, Pointer} from "../../../src/lib/LibUint256Array.sol";
+import {LibPointer} from "../../../src/lib/LibPointer.sol";
 
 /// The existing `unsafeExtend` tests assert the CONTENTS of the extended array
 /// against a reference implementation. Contents alone cannot see the allocator
@@ -17,18 +17,12 @@ import {LibPointer} from "src/lib/LibPointer.sol";
 /// the call under test. Assertions allocate, so any assertion made first moves
 /// the free memory pointer and destroys the measurement.
 ///
-/// The same applies to the poisoned words, only more strictly. Memory at or
-/// above the free memory pointer is temporary memory belonging to whichever
-/// assembly block is currently running, so the language preserves nothing there
-/// from one block to the next. The poison tests therefore keep the whole
-/// measurement inline in exactly two assembly blocks sat flush against the call
-/// under test: one writes the sentinels and snapshots the pointer, the call
-/// runs, the next snapshots the pointer again and copies the sentinels down
-/// into an array allocated before any of it. The only boundary the poison
-/// crosses is the call being measured, which is the measurement itself and so
-/// cannot be removed. Every other boundary can, and is: no helper call sits on
-/// that path, because the compiler would be entitled to reuse the region for it
-/// and be mistaken for the call under test writing past its allocation.
+/// The poison tests keep the whole measurement in two assembly blocks flush
+/// against the call under test: one writes the sentinels and snapshots the
+/// pointer, the call runs, the next snapshots the pointer again and copies the
+/// sentinels down into an array allocated beforehand. Memory at or above the
+/// free memory pointer belongs to whichever assembly block is running, so any
+/// call on that path is entitled to reuse the poisoned region.
 contract LibUint256ArrayAllocationTest is Test {
     using LibUint256Array for uint256[];
 

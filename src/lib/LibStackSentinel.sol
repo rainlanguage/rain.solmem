@@ -4,29 +4,12 @@ pragma solidity ^0.8.25;
 
 import {LibPointer, Pointer} from "./LibPointer.sol";
 import {UnalignedStackPointer} from "../error/ErrStackPointer.sol";
-
-/// Thrown when the sentinel tuple size is zero.
-error ZeroSentinelTupleSize();
-
-/// Thrown when the sentinel cannot be found. This can be because the sentinel
-/// was not in the stack, but also if the sentinel is in the stack but not
-/// aligned with the tuples size, or if the scan stepped outside the stack
-/// bounds and only found a sentinel valued word out there, which is not the
-/// caller's sentinel.
-/// @param sentinel The sentinel that was not found.
-error MissingSentinel(Sentinel sentinel);
-
-/// Thrown when the stack bounds are invalid because the lower is above the
-/// upper.
-/// @param lower The lower stack pointer.
-/// @param upper The upper stack pointer.
-error InvalidStackBounds(Pointer lower, Pointer upper);
-
-/// Thrown when the top of the stack is above the allocated memory pointer, so
-/// the tuples array cannot be built without overwriting the stack it describes.
-/// @param upper The upper stack pointer.
-/// @param allocated The allocated memory pointer.
-error UnallocatedStack(Pointer upper, Pointer allocated);
+import {
+    InvalidStackBounds,
+    MissingSentinel,
+    UnallocatedStack,
+    ZeroSentinelTupleSize
+} from "../error/ErrStackSentinel.sol";
 
 /// > In computer programming, a sentinel value (also referred to as a flag
 /// > value, trip value, rogue value, signal value, or dummy data)[1] is a
@@ -43,54 +26,17 @@ error UnallocatedStack(Pointer upper, Pointer allocated);
 /// > - [Wikipedia](https://en.wikipedia.org/wiki/Sentinel_value)
 type Sentinel is uint256;
 
-/// Rainlang has no dynamic list data type as every stack item MUST be explicit
-/// in the structure of the code itself. While it would be possible for users to
-/// manually code length prefixes into the stack, this would be error prone and
-/// generally hostile to the overall DX. Instead we can allow sentinels as an
-/// option that is merely awkward rather than downright pathological.
-///
-/// Rainlang authors can use a single sentinel value that is constant across all
-/// their expressions rather than a calculated length prefix. This value can even
-/// be aliased in onchain metadata and referenced by name for ease of use. The
-/// calling contract defines and consumes sentinels, so the expression author
-/// does not need to be aware of or have control over any subtleties in choice of
-/// sentinel.
-///
-/// The main tradeoffs for sentinel terminated lists on a stack are similar to
-/// null-terminated strings,
-/// as per [Wikipedia](https://en.wikipedia.org/wiki/Null-terminated_string)
-///
-/// > While simple to implement, this representation has been prone to errors and
-/// > performance problems.
-///
-/// This library attempts to mitigate potential implementation errors with a
-/// standard implementation that has been fuzzed and optimized for building lists
-/// of tuples (and therefore lists of structs via. a direct type cast). The main
-/// implementation issues in null-terminated strings are avoided:
-///
-/// - Using any sentinel value other than `0`, such as the hash of some well
-///   known string, will avoid misinterpreting unallocated memory as a sentinel.
-/// - Any underflow manifests as either a "missing sentinel" or a read from an
-///   unaddressable position, which revert due to an explicit check and gas
-///   limits respectively. An underflowing scan can never report a sentinel
-///   from outside the range it was given.
-/// - Given that a sentinel is `uint256` it is possible to construct a value that
-///   is very unlikely to collide with real values in the implementation domain.
-/// - Well behaved integrity checks will ensure the memory for the sentinel is
-///   allocated as any other stack item.
-///
-/// Sadly there is no way to avoid the O(n) performance overhead of searching for
-/// a sentinel vs. O(1) of reading a length prefix directly. This is somewhat
-/// mitigated by the nature of a hand-written stack being small in
-/// computing terms, and that each item being iterated over is an entire struct
-/// rather than individual stack values. Assembly is used to keep the looping
-/// overhead to a minimum.
+/// @title LibStackSentinel
+/// @notice Reads a sentinel terminated list off a stack. A stack region is
+/// scanned downwards for a sentinel value and the words above it are rebuilt
+/// in place as an array of fixed size tuples, which can be cast to structs.
+/// The sentinel stands in for a length prefix, so the length is O(n) to
+/// recover rather than O(1).
 library LibStackSentinel {
-    using LibStackSentinel for Pointer;
-
-    /// Given two stack pointers that bound a stack build an array of `n` item
-    /// tuples above the given sentinel value. The sentinel will be skipped and
-    /// a pointer below it returned alongside the tuples list.
+    /// Given two stack pointers that bound a stack build an array of
+    /// `tupleSize` item tuples above the given sentinel value. The sentinel is
+    /// excluded from the tuples and a pointer TO it is returned alongside the
+    /// tuples list.
     ///
     /// The tuples can be cast (via assembly) to structs.
     ///
@@ -101,24 +47,22 @@ library LibStackSentinel {
     /// a real value in the array, otherwise an intended array item will be
     /// interpreted as a sentinel.
     ///
-    /// If the sentinel is absent in the stack this WILL REVERT. The intent is
-    /// to represent dynamic length arrays without forcing expression authors to
-    /// calculate lengths on the stack. If the expression author wants to model
-    /// an empty/optional/absent value they MAY provided a sentinel for a zero
-    /// length array and the calling contract SHOULD handle this.
+    /// An expression author that wants to model an empty/optional/absent value
+    /// MAY provide a sentinel for a zero length array and the calling contract
+    /// SHOULD handle this.
     ///
-    /// `n` is scaled to a byte stride in checked Solidity, so an `n` too large
-    /// to scale (`n > type(uint256).max / 0x20`) WILL REVERT with an arithmetic
-    /// overflow panic. Together with `n != 0` that is the only bound on `n`.
-    /// There is no check that the stack is large enough to hold whole tuples of
-    /// that stride, so the scan steps down from `upper` in strides of
-    /// `n * 0x20` BYTES and a stride that the remaining range cannot be stepped
-    /// down by steps the cursor past zero and wraps it. There is no explicit
-    /// underflow check and the resulting failure is deliberately not uniform:
-    /// almost every wrapped cursor lands at an unaddressable position, where
-    /// the read exhausts the whole gas allowance of the call frame, but a
-    /// stride within a few words of `2**256` wraps to a small step UPWARD and
-    /// the scan reads above `upper` instead.
+    /// `tupleSize` is scaled to a byte stride in checked Solidity, so a
+    /// `tupleSize` too large to scale (`tupleSize > type(uint256).max / 0x20`)
+    /// WILL REVERT with an arithmetic overflow panic. That and zero are the
+    /// only bounds on `tupleSize`. There is no check that the stack is large
+    /// enough to hold whole tuples of that stride, so the scan steps down from
+    /// `upper` in strides of `tupleSize * 0x20` BYTES and a stride that the
+    /// remaining range cannot be stepped down by steps the cursor past zero and
+    /// wraps it. There is no explicit underflow check and the resulting failure
+    /// is deliberately not uniform: almost every wrapped cursor lands at an
+    /// unaddressable position, where the read exhausts the whole gas allowance
+    /// of the call frame, but a stride within a few words of `2**256` wraps to
+    /// a small step UPWARD and the scan reads above `upper` instead.
     ///
     /// What IS guaranteed is that an underflowing scan cannot silently
     /// succeed. `sentinelPointer` is ALWAYS within `[lower, upper)`, and a scan
@@ -143,23 +87,27 @@ library LibStackSentinel {
     /// so the same stack without the sentinel in it reverts with
     /// `MissingSentinel` instead.
     ///
-    /// @param upper Pointer to the top of the stack range. MUST NOT be below
-    /// `lower`, MUST be a whole number of words above it, and MUST NOT be above
-    /// the allocated memory pointer.
-    /// @param lower Pointer to the bottom of the stack range.
+    /// @param lower Pointer to the bottom of the stack range. MUST NOT be above
+    /// `upper` or this reverts with `InvalidStackBounds`.
+    /// @param upper Pointer to the top of the stack range. MUST be a whole
+    /// number of words above `lower` and MUST NOT be above the allocated memory
+    /// pointer.
     /// @param sentinel The value to expect as the sentinel. MUST be present in
-    /// the stack or `consumeSentinel` will revert. MUST NOT collide with valid
-    /// stack items (or be cryptographically improbable to do so).
-    /// @param n The number of items per tuple.
-    /// @return sentinelPointer Pointer to the sentinel that was found, ALWAYS
-    /// within `[lower, upper)`. A missing sentinel WILL REVERT.
-    /// @return tuplesPointer Pointer to the n-item tuples array that was built.
-    function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
+    /// the stack ON A TUPLE BOUNDARY or this reverts with `MissingSentinel`.
+    /// MUST NOT collide with valid stack items (or be cryptographically
+    /// improbable to do so).
+    /// @param tupleSize The number of items per tuple. MUST NOT be zero or this
+    /// reverts with `ZeroSentinelTupleSize`.
+    /// @return sentinelPointer Pointer to the word holding the sentinel that
+    /// was found, ALWAYS within `[lower, upper)`.
+    /// @return tuplesPointer Pointer to the `tupleSize` item tuples array that
+    /// was built.
+    function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 tupleSize)
         internal
         pure
         returns (Pointer sentinelPointer, Pointer tuplesPointer)
     {
-        if (n == 0) {
+        if (tupleSize == 0) {
             revert ZeroSentinelTupleSize();
         }
         if (Pointer.unwrap(upper) < Pointer.unwrap(lower)) {
@@ -174,11 +122,11 @@ library LibStackSentinel {
         }
 
         // Each tuple takes this much space in memory. Scaled in checked
-        // Solidity, so an `n` too large to express as a byte stride reverts
-        // with an arithmetic overflow panic rather than wrapping to a small
-        // stride and serving the request as if a much smaller `n` had been
-        // asked for.
-        uint256 size = n * 0x20;
+        // Solidity, so a `tupleSize` too large to express as a byte stride
+        // reverts with an arithmetic overflow panic rather than wrapping to a
+        // small stride and serving the request as if a much smaller
+        // `tupleSize` had been asked for.
+        uint256 size = tupleSize * 0x20;
 
         // First pass to find the sentinel.
         assembly ("memory-safe") {
