@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 import {Pointer} from "./LibPointer.sol";
 import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
-/// @title Uint256Array
+/// @title LibUint256Array
 /// @notice Things we want to do carefully and efficiently with uint256 arrays
 /// that Solidity doesn't give us native tools for.
 library LibUint256Array {
@@ -294,16 +294,15 @@ library LibUint256Array {
         }
     }
 
-    /// Solidity provides no way to change the length of in-memory arrays but
-    /// it also does not deallocate memory ever. It is always safe to shrink an
-    /// array that has already been allocated, with the caveat that the
-    /// truncated items will effectively become inaccessible regions of memory.
-    /// That is to say, we deliberately "leak" the truncated items, but that is
-    /// no worse than Solidity's native behaviour of leaking everything always.
-    /// The array is MUTATED in place so there is no return value and there is
-    /// no new allocation or copying of data either.
-    /// @param array The array to truncate.
-    /// @param newLength The new length of the array after truncation.
+    /// Shrinks an array by mutating its length word directly. The truncated
+    /// items are leaked, i.e. they become inaccessible regions of memory that
+    /// are never deallocated.
+    /// Reverts with `OutOfBoundsTruncate(array.length, newLength)` if
+    /// `newLength` is greater than `array.length`. Truncation can only shrink.
+    /// @param array The array to truncate. MUTATED in place, so there is no
+    /// return value and no new allocation.
+    /// @param newLength The new length of `array` after truncation. MUST NOT
+    /// be greater than `array.length`.
     function truncate(uint256[] memory array, uint256 newLength) internal pure {
         if (newLength > array.length) {
             revert OutOfBoundsTruncate(array.length, newLength);

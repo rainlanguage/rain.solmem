@@ -9,11 +9,9 @@ pragma solidity ^0.8.25;
 type Pointer is uint256;
 
 /// @title LibPointer
-/// Ergonomic wrappers around common pointer movements, reading and writing. As
-/// wrappers on such low level operations often introduce too much jump gas
-/// overhead, these functions MAY find themselves used in reference
-/// implementations that more optimised code can be fuzzed against. MAY also be
-/// situationally useful on cooler performance paths.
+/// @notice Ergonomic wrappers around common pointer movements, reads and
+/// writes. Every wrapper is a function call, so each one costs jump overhead
+/// that inlined assembly does not.
 library LibPointer {
     /// Cast a `Pointer` to `bytes` without modification or any safety checks.
     /// The caller MUST ensure the pointer is to a valid region of memory for
@@ -116,7 +114,7 @@ library LibPointer {
 
     /// Read the word at the pointer.
     ///
-    /// This is UNSAFE because it can read outside any particular data stucture
+    /// This is UNSAFE because it can read outside any particular data structure
     /// or even beyond allocated memory. The caller MUST ensure that this is a
     /// safe operation.
     ///
@@ -130,7 +128,7 @@ library LibPointer {
 
     /// Write a word at the pointer.
     ///
-    /// This is UNSAFE because it can write outside any particular data stucture
+    /// This is UNSAFE because it can write outside any particular data structure
     /// or even beyond allocated memory. The caller MUST ensure that this is a
     /// safe operation.
     ///

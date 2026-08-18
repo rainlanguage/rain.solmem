@@ -26,48 +26,12 @@ import {
 /// > - [Wikipedia](https://en.wikipedia.org/wiki/Sentinel_value)
 type Sentinel is uint256;
 
-/// Rainlang has no dynamic list data type as every stack item MUST be explicit
-/// in the structure of the code itself. While it would be possible for users to
-/// manually code length prefixes into the stack, this would be error prone and
-/// generally hostile to the overall DX. Instead we can allow sentinels as an
-/// option that is merely awkward rather than downright pathological.
-///
-/// Rainlang authors can use a single sentinel value that is constant across all
-/// their expressions rather than a calculated length prefix. This value can even
-/// be aliased in onchain metadata and referenced by name for ease of use. The
-/// calling contract defines and consumes sentinels, so the expression author
-/// does not need to be aware of or have control over any subtleties in choice of
-/// sentinel.
-///
-/// The main tradeoffs for sentinel terminated lists on a stack are similar to
-/// null-terminated strings,
-/// as per [Wikipedia](https://en.wikipedia.org/wiki/Null-terminated_string)
-///
-/// > While simple to implement, this representation has been prone to errors and
-/// > performance problems.
-///
-/// This library attempts to mitigate potential implementation errors with a
-/// standard implementation that has been fuzzed and optimized for building lists
-/// of tuples (and therefore lists of structs via. a direct type cast). The main
-/// implementation issues in null-terminated strings are avoided:
-///
-/// - Using any sentinel value other than `0`, such as the hash of some well
-///   known string, will avoid misinterpreting unallocated memory as a sentinel.
-/// - Any underflow manifests as either a "missing sentinel" or a read from an
-///   unaddressable position, which revert due to an explicit check and gas
-///   limits respectively. An underflowing scan can never report a sentinel
-///   from outside the range it was given.
-/// - Given that a sentinel is `uint256` it is possible to construct a value that
-///   is very unlikely to collide with real values in the implementation domain.
-/// - Well behaved integrity checks will ensure the memory for the sentinel is
-///   allocated as any other stack item.
-///
-/// Sadly there is no way to avoid the O(n) performance overhead of searching for
-/// a sentinel vs. O(1) of reading a length prefix directly. This is somewhat
-/// mitigated by the nature of a hand-written stack being small in
-/// computing terms, and that each item being iterated over is an entire struct
-/// rather than individual stack values. Assembly is used to keep the looping
-/// overhead to a minimum.
+/// @title LibStackSentinel
+/// @notice Reads a sentinel terminated list off a stack. A stack region is
+/// scanned downwards for a sentinel value and the words above it are rebuilt
+/// in place as an array of fixed size tuples, which can be cast to structs.
+/// The sentinel stands in for a length prefix, so the length is O(n) to
+/// recover rather than O(1).
 library LibStackSentinel {
     /// Given two stack pointers that bound a stack build an array of
     /// `tupleSize` item tuples above the given sentinel value. The sentinel is
