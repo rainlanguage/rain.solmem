@@ -91,13 +91,6 @@ forge soldeer install # install dependencies declared in foundry.toml
 forge test
 ```
 
-Tasks exposed via the shell (delegate to rainix):
-
-- `rainix-sol-test` — `forge test`
-- `rainix-sol-static` — slither
-- `rainix-sol-legal` — `reuse lint`
-- `rainix-sol-artifacts` — `forge build`
-
 Use the nix-pinned `forge` for all development to keep versions consistent.
 
 ## Publish
@@ -130,7 +123,7 @@ This repo is [REUSE 3.2](https://reuse.software/spec-3.2/) compliant. Verify
 locally:
 
 ```sh
-nix develop -c rainix-sol-legal
+nix develop -c reuse lint
 ```
 
 ## Contributions
