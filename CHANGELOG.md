@@ -35,9 +35,8 @@ consumer.
 
 - **Breaking:** `LibStackPointer` removed.
 - `consumeSentinelTuples` reverts with `MissingSentinel` when the sentinel it
-  finds lies at or above
-  `upper`, which a stride within a few words of `2**256` reached by wrapping
-  the cursor upward out of the caller's range.
+  finds lies at or above `upper`, which a stride within a few words of `2**256`
+  reached by wrapping the cursor upward out of the caller's range.
 
 ## 0.1.10
 
