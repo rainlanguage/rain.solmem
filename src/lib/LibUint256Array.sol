@@ -299,12 +299,13 @@ library LibUint256Array {
         }
     }
 
-    /// Extends `base_` with `extend_` by allocating only an additional
-    /// `extend_.length` words onto `base_` and copying only `extend_` if
-    /// possible. If `base_` is large this MAY be significantly more efficient
-    /// than allocating `base_.length + extend_.length` for an entirely new array
-    /// and copying both `base_` and `extend_` into the new array one item at a
-    /// time in Solidity.
+    /// Extends `baseArray` with `extendArray` by allocating only an additional
+    /// `extendArray.length` words onto `baseArray` and copying only
+    /// `extendArray` if possible. If `baseArray` is large this MAY be
+    /// significantly more efficient than allocating
+    /// `baseArray.length + extendArray.length` for an entirely new array and
+    /// copying both `baseArray` and `extendArray` into the new array one item
+    /// at a time in Solidity.
     ///
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
@@ -328,10 +329,14 @@ library LibUint256Array {
     /// Both arrays MUST be valid solidity memory arrays, each owning the region
     /// its own length word describes.
     ///
-    /// @param b The base integer array that will be extended by `e`.
-    /// @param e The extend integer array that extends `b`.
-    /// @return extended The extended array of `b` extended by `e`.
-    function unsafeExtend(uint256[] memory b, uint256[] memory e) internal pure returns (uint256[] memory extended) {
+    /// @param baseArray The base array that will be extended by `extendArray`.
+    /// @param extendArray The extend array that extends `baseArray`.
+    /// @return extended `baseArray` extended by `extendArray`.
+    function unsafeExtend(uint256[] memory baseArray, uint256[] memory extendArray)
+        internal
+        pure
+        returns (uint256[] memory extended)
+    {
         assembly ("memory-safe") {
             // Slither doesn't recognise assembly function names as mixed case
             // even if they are.
@@ -377,7 +382,7 @@ library LibUint256Array {
                 }
             }
 
-            extended := extendInline(b, e)
+            extended := extendInline(baseArray, extendArray)
         }
     }
 
