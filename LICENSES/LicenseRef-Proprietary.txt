@@ -1,0 +1,2 @@
+No license is granted. All rights are reserved by the copyright holder named in
+the file's SPDX-FileCopyrightText.

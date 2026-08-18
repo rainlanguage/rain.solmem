@@ -4,10 +4,11 @@ version = 1
 path = [
   ".github/workflows/**/",
   ".vscode/**/",
-  "audit/**/",
+  "audit/*",
   ".audit/**",
   ".gitignore",
   "README.md",
+  "SECURITY.md",
   "flake.lock",
   "flake.nix",
   "foundry.toml",
@@ -19,3 +20,8 @@ path = [
 ]
 SPDX-FileCopyrightText = "Copyright (c) 2020 Rain Open Source Software Ltd"
 SPDX-License-Identifier = "LicenseRef-DCL-1.0"
+
+[[annotations]]
+path = ["audit/protofire/**"]
+SPDX-FileCopyrightText = "Copyright (c) 2026 Protofire"
+SPDX-License-Identifier = "LicenseRef-Proprietary"

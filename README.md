@@ -66,6 +66,11 @@ Tag `v<x.y.z>` on `main`. The
 `forge soldeer push rain-solmem~<x.y.z>` on every `v*` tag. The package name is
 derived from the repo name with `.` substituted for `-`.
 
+## Versioning
+
+Releases are `0.y.z`. A patch bump MAY change behaviour, so pin an exact
+`rain-solmem~<x.y.z>` and read the diff before taking a new one.
+
 ## License
 
 DecentraLicense 1.0 (DCL-1.0) — full text in
@@ -81,7 +86,15 @@ locally:
 nix develop -c rainix-sol-legal
 ```
 
+## Security
+
+Memory-safety bugs get reported privately. See [`SECURITY.md`](SECURITY.md).
+
 ## Contributions
 
 Welcome under the same license. Contributors warrant that their contributions
 are compliant.
+
+`LibBytes32Array` and `LibBytes32Matrix` mirror `LibUint256Array` and
+`LibUint256Matrix` by hand. A change to one goes in the other, and in both test
+suites.
