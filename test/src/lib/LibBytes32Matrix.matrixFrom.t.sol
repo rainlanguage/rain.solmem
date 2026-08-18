@@ -8,7 +8,7 @@ import {LibBytes32Matrix, LibPointer, Pointer} from "src/lib/LibBytes32Matrix.so
 
 import {LibBytes32MatrixSlow} from "test/lib/LibBytes32MatrixSlow.sol";
 
-contract LibBytes32ArrayMatrixFromTest is Test {
+contract LibBytes32MatrixMatrixFromTest is Test {
     using LibBytes32Array for bytes32;
     using LibBytes32Matrix for bytes32[];
     using LibBytes32MatrixSlow for bytes32[];

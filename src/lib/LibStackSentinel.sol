@@ -69,9 +69,10 @@ type Sentinel is uint256;
 /// rather than individual stack values. Assembly is used to keep the looping
 /// overhead to a minimum.
 library LibStackSentinel {
-    /// Given two stack pointers that bound a stack build an array of `n` item
-    /// tuples above the given sentinel value. The sentinel is excluded from the
-    /// tuples and a pointer TO it is returned alongside the tuples list.
+    /// Given two stack pointers that bound a stack build an array of
+    /// `tupleSize` item tuples above the given sentinel value. The sentinel is
+    /// excluded from the tuples and a pointer TO it is returned alongside the
+    /// tuples list.
     ///
     /// The tuples can be cast (via assembly) to structs.
     ///
@@ -86,18 +87,18 @@ library LibStackSentinel {
     /// MAY provide a sentinel for a zero length array and the calling contract
     /// SHOULD handle this.
     ///
-    /// `n` is scaled to a byte stride in checked Solidity, so an `n` too large
-    /// to scale (`n > type(uint256).max / 0x20`) WILL REVERT with an arithmetic
-    /// overflow panic. That and zero are the only bounds on `n`. There is no
-    /// check that the stack is large enough to hold whole tuples of that
-    /// stride, so the scan steps down from `upper` in strides of `n * 0x20`
-    /// BYTES and a stride that the remaining range cannot be stepped down by
-    /// steps the cursor past zero and wraps it. There is no explicit underflow
-    /// check and the resulting failure is deliberately not uniform: almost
-    /// every wrapped cursor lands at an unaddressable position, where the read
-    /// exhausts the whole gas allowance of the call frame, but a stride within
-    /// a few words of `2**256` wraps to a small step UPWARD and the scan reads
-    /// above `upper` instead.
+    /// `tupleSize` is scaled to a byte stride in checked Solidity, so a
+    /// `tupleSize` too large to scale (`tupleSize > type(uint256).max / 0x20`)
+    /// WILL REVERT with an arithmetic overflow panic. That and zero are the
+    /// only bounds on `tupleSize`. There is no check that the stack is large
+    /// enough to hold whole tuples of that stride, so the scan steps down from
+    /// `upper` in strides of `tupleSize * 0x20` BYTES and a stride that the
+    /// remaining range cannot be stepped down by steps the cursor past zero and
+    /// wraps it. There is no explicit underflow check and the resulting failure
+    /// is deliberately not uniform: almost every wrapped cursor lands at an
+    /// unaddressable position, where the read exhausts the whole gas allowance
+    /// of the call frame, but a stride within a few words of `2**256` wraps to
+    /// a small step UPWARD and the scan reads above `upper` instead.
     ///
     /// What IS guaranteed is that an underflowing scan cannot silently
     /// succeed. `sentinelPointer` is ALWAYS within `[lower, upper)`, and a scan
@@ -131,17 +132,18 @@ library LibStackSentinel {
     /// the stack ON A TUPLE BOUNDARY or this reverts with `MissingSentinel`.
     /// MUST NOT collide with valid stack items (or be cryptographically
     /// improbable to do so).
-    /// @param n The number of items per tuple. MUST NOT be zero or this reverts
-    /// with `ZeroSentinelTupleSize`.
+    /// @param tupleSize The number of items per tuple. MUST NOT be zero or this
+    /// reverts with `ZeroSentinelTupleSize`.
     /// @return sentinelPointer Pointer to the word holding the sentinel that
     /// was found, ALWAYS within `[lower, upper)`.
-    /// @return tuplesPointer Pointer to the n-item tuples array that was built.
-    function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 n)
+    /// @return tuplesPointer Pointer to the `tupleSize` item tuples array that
+    /// was built.
+    function consumeSentinelTuples(Pointer lower, Pointer upper, Sentinel sentinel, uint256 tupleSize)
         internal
         pure
         returns (Pointer sentinelPointer, Pointer tuplesPointer)
     {
-        if (n == 0) {
+        if (tupleSize == 0) {
             revert ZeroSentinelTupleSize();
         }
         if (Pointer.unwrap(upper) < Pointer.unwrap(lower)) {
@@ -156,11 +158,11 @@ library LibStackSentinel {
         }
 
         // Each tuple takes this much space in memory. Scaled in checked
-        // Solidity, so an `n` too large to express as a byte stride reverts
-        // with an arithmetic overflow panic rather than wrapping to a small
-        // stride and serving the request as if a much smaller `n` had been
-        // asked for.
-        uint256 size = n * 0x20;
+        // Solidity, so a `tupleSize` too large to express as a byte stride
+        // reverts with an arithmetic overflow panic rather than wrapping to a
+        // small stride and serving the request as if a much smaller
+        // `tupleSize` had been asked for.
+        uint256 size = tupleSize * 0x20;
 
         // First pass to find the sentinel.
         assembly ("memory-safe") {

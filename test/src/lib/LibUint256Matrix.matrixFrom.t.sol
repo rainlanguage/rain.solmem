@@ -8,7 +8,7 @@ import {LibUint256Matrix, LibPointer, Pointer} from "src/lib/LibUint256Matrix.so
 
 import {LibUint256MatrixSlow} from "test/lib/LibUint256MatrixSlow.sol";
 
-contract LibUint256ArrayMatrixFromTest is Test {
+contract LibUint256MatrixMatrixFromTest is Test {
     using LibUint256Array for uint256;
     using LibUint256Matrix for uint256[];
     using LibUint256MatrixSlow for uint256[];
