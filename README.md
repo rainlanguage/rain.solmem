@@ -1,7 +1,10 @@
 # rain.solmem
 
 Solidity memory libraries — pointer arithmetic, byte-level copying, and dynamic
-arrays/matrices that don't go through Solidity's safety-checked allocator.
+arrays/matrices built in raw assembly rather than through Solidity's
+bounds-checked, zeroing array handling. Allocating functions still read and
+update the free memory pointer at `0x40`; the safety checks are skipped, the
+allocator is not.
 
 ## Libraries
 
@@ -16,8 +19,30 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 | `LibBytes32Matrix` | `bytes32[][]` operations.                                                 |
 | `LibStackSentinel` | Sentinel-terminated stack walks for unknown-length data.                  |
 
-These libraries assume the caller knows what they're doing with memory. Out-of-
-bounds access, double-frees, and aliasing are the caller's responsibility.
+## Safety contract
+
+These libraries assume the caller knows what they're doing with memory. There is
+no `free` in EVM memory, so the hazards are out-of-bounds reads and writes,
+silent pointer wraparound, and aliasing.
+
+- A `Pointer` is a bare `uint256`. `LibPointer` arithmetic wraps silently and is
+  checked against neither `0x40` nor the length prefix of the structure the
+  pointer came from.
+- `unsafe*` functions perform no bounds checks. The caller MUST establish, at
+  its own call sites, that every read is in bounds and every write lands in
+  memory the caller owns.
+- Functions that allocate read and update `0x40` themselves, so they MUST NOT be
+  interleaved with hand-written assembly that caches `0x40` across the call.
+- `unsafeExtend` MAY mutate its base argument in place and MAY return a pointer
+  to it. Use the returned array only.
+- Overlap between arguments is the caller's problem. Every array or `bytes`
+  argument MUST be a valid Solidity memory structure that owns the region its
+  own length word describes.
+- Every assembly block in `src/` is annotated `("memory-safe")`. That annotation
+  is an assertion to the compiler, not a guarantee to the caller: it holds for
+  these functions only while the obligations above hold. The functions are
+  `internal` and inline, so the assertion lands inside the consumer's own
+  compilation unit.
 
 ## Requirements
 
