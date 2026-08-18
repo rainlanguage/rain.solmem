@@ -8,13 +8,12 @@ import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
 import {LibUint256Array} from "src/lib/LibUint256Array.sol";
 import {UnalignedStackPointer} from "src/error/ErrStackPointer.sol";
 import {
-    LibStackSentinel,
-    Sentinel,
-    MissingSentinel,
-    ZeroSentinelTupleSize,
     InvalidStackBounds,
-    UnallocatedStack
-} from "src/lib/LibStackSentinel.sol";
+    MissingSentinel,
+    UnallocatedStack,
+    ZeroSentinelTupleSize
+} from "src/error/ErrStackSentinel.sol";
+import {LibStackSentinel, Sentinel} from "src/lib/LibStackSentinel.sol";
 
 contract LibStackSentinelTest is Test {
     using LibUint256Array for uint256[];
