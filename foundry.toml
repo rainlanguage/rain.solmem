@@ -15,4 +15,4 @@ fuzz.runs = 2056
 libs = ["dependencies"]
 
 [dependencies]
-forge-std = "1.16.1"
+forge-std = "1.16.2"
