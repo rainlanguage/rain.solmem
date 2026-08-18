@@ -3,10 +3,13 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {LibUint256Array} from "src/lib/LibUint256Array.sol";
 import {LibUint256Matrix} from "src/lib/LibUint256Matrix.sol";
+import {LibPointer, Pointer} from "src/lib/LibPointer.sol";
 import {LibUint256MatrixSlow} from "test/lib/LibUint256MatrixSlow.sol";
 
 contract LibUint256MatrixFlattenTest is Test {
+    using LibUint256Array for uint256[];
     using LibUint256Matrix for uint256[][];
 
     function checkFlatten(uint256[][] memory matrix, uint256[] memory expected) internal pure {
@@ -277,5 +280,66 @@ contract LibUint256MatrixFlattenTest is Test {
     /// forge-config: default.fuzz.runs = 100
     function testFlattenReference(uint256[][] memory matrix) external pure {
         checkFlatten(matrix, LibUint256MatrixSlow.flattenSlow(matrix));
+    }
+
+    /// `matrixFrom` stores the pointers it is handed, so one sub array can
+    /// appear more than once. Every appearance is copied out in order and the
+    /// shared source is left intact. ABI decoding allocates a fresh sub array
+    /// per element, so `testFlattenReference` never builds this shape, and this
+    /// is the only case that flattens a matrix built by `matrixFrom`.
+    function testFlattenAliasedInnerArrays() external pure {
+        uint256[] memory a = LibUint256Array.arrayFrom(0x11, 0x22);
+        uint256[][] memory matrix = LibUint256Matrix.matrixFrom(a, a, a);
+
+        uint256[] memory flattened = matrix.flatten();
+        // Read the free memory pointer BEFORE any assertion, because assertions
+        // allocate and would move it.
+        uint256 fmpAfter = uint256(Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
+        uint256 endOfFlattened = uint256(Pointer.unwrap(flattened.endPointer()));
+
+        assertEq(flattened.length, 6, "length");
+        for (uint256 i = 0; i < 3; i++) {
+            assertEq(flattened[i * 2], 0x11, "even");
+            assertEq(flattened[(i * 2) + 1], 0x22, "odd");
+        }
+        assertEq(fmpAfter, endOfFlattened, "fmp");
+        assertEq(a.length, 2, "source length");
+        assertEq(a[0], 0x11, "source 0");
+        assertEq(a[1], 0x22, "source 1");
+    }
+
+    /// `flatten` writes only within its own allocation, so the matrix and its
+    /// sub arrays read back unchanged. No case above sees this: `checkFlatten`
+    /// only reads the result, and `testFlattenReference` captures its expected
+    /// array from the pristine matrix before `flatten` runs.
+    function testFlattenLeavesSourceUnmodified() external pure {
+        uint256[] memory a = LibUint256Array.arrayFrom(0x11, 0x22);
+        uint256[] memory b = LibUint256Array.arrayFrom(0x33);
+        uint256[][] memory matrix = LibUint256Matrix.matrixFrom(a, b);
+
+        matrix.flatten();
+
+        assertEq(matrix.length, 2, "outer length");
+        assertEq(matrix[0].length, 2, "sub 0 length");
+        assertEq(matrix[0][0], 0x11, "sub 0 item 0");
+        assertEq(matrix[0][1], 0x22, "sub 0 item 1");
+        assertEq(matrix[1].length, 1, "sub 1 length");
+        assertEq(matrix[1][0], 0x33, "sub 1 item 0");
+    }
+
+    /// `testFlattenLeavesSourceUnmodified` over the shapes the fuzzer reaches.
+    /// forge-config: default.fuzz.runs = 100
+    function testFlattenLeavesSourceUnmodifiedFuzz(uint256[][] memory matrix) external pure {
+        uint256[][] memory snapshot = new uint256[][](matrix.length);
+        for (uint256 i = 0; i < matrix.length; i++) {
+            snapshot[i] = new uint256[](matrix[i].length);
+            for (uint256 j = 0; j < matrix[i].length; j++) {
+                snapshot[i][j] = matrix[i][j];
+            }
+        }
+
+        matrix.flatten();
+
+        assertTrue(LibUint256MatrixSlow.compareMatrices(matrix, snapshot, snapshot.length), "source unmodified");
     }
 }

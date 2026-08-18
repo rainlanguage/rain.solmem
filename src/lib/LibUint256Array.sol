@@ -3,7 +3,7 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title Uint256Array
 /// @notice Things we want to do carefully and efficiently with uint256 arrays
@@ -324,7 +324,7 @@ library LibUint256Array {
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
     /// there is allocated memory after the end of base then extension will
-    /// require copying both the base and extend arays to a new region of memory.
+    /// require copying both the base and extend arrays to a new region of memory.
     /// The caller is responsible for optimising code paths to avoid additional
     /// allocations.
     ///

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title Bytes32Array
 /// @notice Things we want to do carefully and efficiently with bytes32 arrays
@@ -55,7 +55,7 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a A single integer to build an array around.
+    /// @param a A single value to build an array around.
     /// @return array The newly allocated array including `a` as a single item.
     function arrayFrom(bytes32 a) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
@@ -68,8 +68,8 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
     /// @return array The newly allocated array including `a` and `b` as the only
     /// items.
     function arrayFrom(bytes32 a, bytes32 b) internal pure returns (bytes32[] memory array) {
@@ -84,9 +84,9 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
     /// @return array The newly allocated array including `a`, `b` and `c` as the
     /// only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c) internal pure returns (bytes32[] memory array) {
@@ -102,10 +102,10 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c` and `d` as the
     /// only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d) internal pure returns (bytes32[] memory array) {
@@ -122,11 +122,11 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d` and
     /// `e` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e)
@@ -148,12 +148,12 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`
     /// and `f` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f)
@@ -176,13 +176,13 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
-    /// @param g The seventh integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
+    /// @param g The seventh value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`,
     /// `f` and `g` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f, bytes32 g)
@@ -206,14 +206,14 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
-    /// @param g The seventh integer to build an array around.
-    /// @param h The eighth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
+    /// @param g The seventh value to build an array around.
+    /// @param h The eighth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`,
     /// `f`, `g` and `h` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f, bytes32 g, bytes32 h)
@@ -324,7 +324,7 @@ library LibBytes32Array {
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
     /// there is allocated memory after the end of base then extension will
-    /// require copying both the base and extend arays to a new region of memory.
+    /// require copying both the base and extend arrays to a new region of memory.
     /// The caller is responsible for optimising code paths to avoid additional
     /// allocations.
     ///
