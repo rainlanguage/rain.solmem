@@ -3,10 +3,10 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {OutOfBoundsTruncate} from "src/error/ErrTruncate.sol";
-import {LibBytes} from "src/lib/LibBytes.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
+import {OutOfBoundsTruncate} from "../../../src/error/ErrTruncate.sol";
+import {LibBytes} from "../../../src/lib/LibBytes.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
 
 contract ErrTruncateTest is Test {
     function truncateBytesExternal(uint256 length, uint256 truncatedLength) external pure {
