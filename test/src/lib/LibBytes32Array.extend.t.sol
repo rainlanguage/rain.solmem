@@ -94,6 +94,81 @@ contract LibBytes32ArrayExtendTest is Test {
         assertNotEq(baseBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "allocate path not taken");
     }
 
+    /// An empty base contributes nothing, so the extended array is the extend
+    /// array's contents. The inline path returns the pointer it was given.
+    function testExtendInlineEmptyBaseKeepsBasePointer() public pure {
+        bytes32[] memory extend = new bytes32[](2);
+        extend[0] = bytes32(uint256(0x44));
+        extend[1] = bytes32(uint256(0x55));
+
+        // Allocated last, so base is the most recent allocation.
+        bytes32[] memory base = new bytes32[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibBytes32Array.startPointer(base));
+        bytes32[] memory extended = LibBytes32Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 2, "length");
+        assertEq(extended[0], bytes32(uint256(0x44)), "0");
+        assertEq(extended[1], bytes32(uint256(0x55)), "1");
+        assertEq(baseBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "inline path not taken");
+    }
+
+    /// The allocating counterpart of the case above. The result is a fresh
+    /// region aliasing neither input, so a later write through the result
+    /// cannot reach the extend array.
+    function testExtendAllocateEmptyBaseAllocatesFreshRegion() public pure {
+        bytes32[] memory base = new bytes32[](0);
+
+        // Allocated after base, so base is no longer the most recent
+        // allocation.
+        bytes32[] memory extend = new bytes32[](2);
+        extend[0] = bytes32(uint256(0x44));
+        extend[1] = bytes32(uint256(0x55));
+
+        uint256 baseBefore = Pointer.unwrap(LibBytes32Array.startPointer(base));
+        uint256 extendBefore = Pointer.unwrap(LibBytes32Array.startPointer(extend));
+        bytes32[] memory extended = LibBytes32Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 2, "length");
+        assertEq(extended[0], bytes32(uint256(0x44)), "0");
+        assertEq(extended[1], bytes32(uint256(0x55)), "1");
+        assertNotEq(baseBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "allocate path not taken");
+        assertNotEq(extendBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "aliases extend");
+    }
+
+    /// Both arrays empty. Nothing is copied and the result is empty. The inline
+    /// path returns the pointer it was given.
+    function testExtendInlineBothEmptyKeepsBasePointer() public pure {
+        bytes32[] memory extend = new bytes32[](0);
+
+        // Allocated last, so base is the most recent allocation.
+        bytes32[] memory base = new bytes32[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibBytes32Array.startPointer(base));
+        bytes32[] memory extended = LibBytes32Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 0, "length");
+        assertEq(baseBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "inline path not taken");
+    }
+
+    /// The allocating counterpart of the case above. Empty in, empty out, and
+    /// still a fresh region aliasing neither input.
+    function testExtendAllocateBothEmptyAllocatesFreshRegion() public pure {
+        bytes32[] memory base = new bytes32[](0);
+
+        // Allocated after base, so base is no longer the most recent
+        // allocation.
+        bytes32[] memory extend = new bytes32[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibBytes32Array.startPointer(base));
+        uint256 extendBefore = Pointer.unwrap(LibBytes32Array.startPointer(extend));
+        bytes32[] memory extended = LibBytes32Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 0, "length");
+        assertNotEq(baseBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "allocate path not taken");
+        assertNotEq(extendBefore, Pointer.unwrap(LibBytes32Array.startPointer(extended)), "aliases extend");
+    }
+
     function testExtendAllocateDebug() public pure {
         bytes32[] memory a = new bytes32[](3);
         bytes32[] memory b = new bytes32[](4);

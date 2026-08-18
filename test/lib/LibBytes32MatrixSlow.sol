@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-DCL-1.0
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
-pragma solidity =0.8.25;
+pragma solidity ^0.8.25;
 
 library LibBytes32MatrixSlow {
     function compareMatrices(bytes32[][] memory a, bytes32[][] memory b, uint256 expectedLength)
