@@ -3,22 +3,22 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {TruncateError} from "../error/ErrBytes.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title LibBytes
 /// @notice Tools for working directly with memory in a Solidity compatible way.
 library LibBytes {
     /// Truncates bytes of data by mutating its length directly.
     /// Any excess bytes are leaked.
-    /// Reverts with `TruncateError(data.length, length)` if `length` is greater
-    /// than `data.length`. Truncation can only shrink.
+    /// Reverts with `OutOfBoundsTruncate(data.length, length)` if `length` is
+    /// greater than `data.length`. Truncation can only shrink.
     /// @param data The bytes to truncate. MUTATED in place, so there is no
     /// return value and no new allocation.
     /// @param length The new length of `data` after truncation. MUST NOT be
     /// greater than `data.length`.
     function truncate(bytes memory data, uint256 length) internal pure {
         if (data.length < length) {
-            revert TruncateError(data.length, length);
+            revert OutOfBoundsTruncate(data.length, length);
         }
         assembly ("memory-safe") {
             mstore(data, length)

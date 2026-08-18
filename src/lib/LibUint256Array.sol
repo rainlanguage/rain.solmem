@@ -3,14 +3,12 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title LibUint256Array
 /// @notice Things we want to do carefully and efficiently with uint256 arrays
 /// that Solidity doesn't give us native tools for.
 library LibUint256Array {
-    using LibUint256Array for uint256[];
-
     /// Pointer to the start (length prefix) of a `uint256[]`.
     /// @param array The array to get the start pointer of.
     /// @return pointer The pointer to the start of `array`.
@@ -245,7 +243,15 @@ library LibUint256Array {
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256[] memory tail) internal pure returns (uint256[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 1)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 1)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -254,7 +260,7 @@ library LibUint256Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -266,7 +272,15 @@ library LibUint256Array {
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256 b, uint256[] memory tail) internal pure returns (uint256[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 2)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 2)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -276,7 +290,7 @@ library LibUint256Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -298,12 +312,11 @@ library LibUint256Array {
         }
     }
 
-    /// Extends `base_` with `extend_` by allocating only an additional
-    /// `extend_.length` words onto `base_` and copying only `extend_` if
-    /// possible. If `base_` is large this MAY be significantly more efficient
-    /// than allocating `base_.length + extend_.length` for an entirely new array
-    /// and copying both `base_` and `extend_` into the new array one item at a
-    /// time in Solidity.
+    /// Extends `b` with `e` by allocating only an additional `e.length` words
+    /// onto `b` and copying only `e` if possible. If `b` is large this MAY be
+    /// significantly more efficient than allocating `b.length + e.length` for
+    /// an entirely new array and copying both `b` and `e` into the new array
+    /// one item at a time in Solidity.
     ///
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If

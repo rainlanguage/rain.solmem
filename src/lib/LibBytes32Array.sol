@@ -3,14 +3,12 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {OutOfBoundsTruncate} from "../error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title LibBytes32Array
 /// @notice Things we want to do carefully and efficiently with bytes32 arrays
 /// that Solidity doesn't give us native tools for.
 library LibBytes32Array {
-    using LibBytes32Array for bytes32[];
-
     /// Pointer to the start (length prefix) of a `bytes32[]`.
     /// @param array The array to get the start pointer of.
     /// @return pointer The pointer to the start of `array`.
@@ -57,7 +55,7 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a A single integer to build an array around.
+    /// @param a A single value to build an array around.
     /// @return array The newly allocated array including `a` as a single item.
     function arrayFrom(bytes32 a) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
@@ -70,8 +68,8 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
     /// @return array The newly allocated array including `a` and `b` as the only
     /// items.
     function arrayFrom(bytes32 a, bytes32 b) internal pure returns (bytes32[] memory array) {
@@ -86,9 +84,9 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
     /// @return array The newly allocated array including `a`, `b` and `c` as the
     /// only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c) internal pure returns (bytes32[] memory array) {
@@ -104,10 +102,10 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c` and `d` as the
     /// only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d) internal pure returns (bytes32[] memory array) {
@@ -124,11 +122,11 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d` and
     /// `e` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e)
@@ -150,12 +148,12 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`
     /// and `f` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f)
@@ -178,13 +176,13 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
-    /// @param g The seventh integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
+    /// @param g The seventh value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`,
     /// `f` and `g` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f, bytes32 g)
@@ -208,14 +206,14 @@ library LibBytes32Array {
 
     /// Building arrays from literal components is a common task that introduces
     /// boilerplate that is either inefficient or error prone.
-    /// @param a The first integer to build an array around.
-    /// @param b The second integer to build an array around.
-    /// @param c The third integer to build an array around.
-    /// @param d The fourth integer to build an array around.
-    /// @param e The fifth integer to build an array around.
-    /// @param f The sixth integer to build an array around.
-    /// @param g The seventh integer to build an array around.
-    /// @param h The eighth integer to build an array around.
+    /// @param a The first value to build an array around.
+    /// @param b The second value to build an array around.
+    /// @param c The third value to build an array around.
+    /// @param d The fourth value to build an array around.
+    /// @param e The fifth value to build an array around.
+    /// @param f The sixth value to build an array around.
+    /// @param g The seventh value to build an array around.
+    /// @param h The eighth value to build an array around.
     /// @return array The newly allocated array including `a`, `b`, `c`, `d`, `e`,
     /// `f`, `g` and `h` as the only items.
     function arrayFrom(bytes32 a, bytes32 b, bytes32 c, bytes32 d, bytes32 e, bytes32 f, bytes32 g, bytes32 h)
@@ -245,7 +243,15 @@ library LibBytes32Array {
     /// @return array The new array.
     function arrayFrom(bytes32 a, bytes32[] memory tail) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 1)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 1)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -254,7 +260,7 @@ library LibBytes32Array {
             mstore(outputCursor, length)
             mstore(add(outputCursor, 0x20), a)
 
-            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x40), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -266,7 +272,15 @@ library LibBytes32Array {
     /// @return array The new array.
     function arrayFrom(bytes32 a, bytes32 b, bytes32[] memory tail) internal pure returns (bytes32[] memory array) {
         assembly ("memory-safe") {
-            let length := add(mload(tail), 2)
+            // Read the tail length ONCE, before anything is written into the
+            // output region. The output is allocated at the free memory
+            // pointer, so a tail at or above it overlaps the output and the
+            // writes below can land on the tail's own length word. Reading the
+            // length again after that would size the copy from a word the
+            // function itself just wrote, running it past the free memory
+            // pointer.
+            let tailLength := mload(tail)
+            let length := add(tailLength, 2)
             let outputCursor := mload(0x40)
             array := outputCursor
             let outputEnd := add(outputCursor, add(0x20, mul(length, 0x20)))
@@ -276,7 +290,7 @@ library LibBytes32Array {
             mstore(add(outputCursor, 0x20), a)
             mstore(add(outputCursor, 0x40), b)
 
-            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(mload(tail), 0x20))
+            mcopy(add(outputCursor, 0x60), add(tail, 0x20), mul(tailLength, 0x20))
         }
     }
 
@@ -298,12 +312,11 @@ library LibBytes32Array {
         }
     }
 
-    /// Extends `base_` with `extend_` by allocating only an additional
-    /// `extend_.length` words onto `base_` and copying only `extend_` if
-    /// possible. If `base_` is large this MAY be significantly more efficient
-    /// than allocating `base_.length + extend_.length` for an entirely new array
-    /// and copying both `base_` and `extend_` into the new array one item at a
-    /// time in Solidity.
+    /// Extends `b` with `e` by allocating only an additional `e.length` words
+    /// onto `b` and copying only `e` if possible. If `b` is large this MAY be
+    /// significantly more efficient than allocating `b.length + e.length` for
+    /// an entirely new array and copying both `b` and `e` into the new array
+    /// one item at a time in Solidity.
     ///
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
@@ -327,8 +340,8 @@ library LibBytes32Array {
     /// Both arrays MUST be valid solidity memory arrays, each owning the region
     /// its own length word describes.
     ///
-    /// @param b The base integer array that will be extended by `e`.
-    /// @param e The extend integer array that extends `b`.
+    /// @param b The base array that will be extended by `e`.
+    /// @param e The extend array that extends `b`.
     /// @return extended The extended array of `b` extended by `e`.
     function unsafeExtend(bytes32[] memory b, bytes32[] memory e) internal pure returns (bytes32[] memory extended) {
         assembly ("memory-safe") {

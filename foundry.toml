@@ -1,6 +1,6 @@
 [package]
 name = "rain-solmem"
-version = "0.1.16"
+version = "0.1.21"
 
 [profile.default]
 

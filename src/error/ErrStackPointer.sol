@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity ^0.8.25;
 
-import {Pointer} from "../lib/LibMemCpy.sol";
+import {Pointer} from "../lib/LibPointer.sol";
 
 /// Throws if two stack pointers are unaligned with each other (32 bytes).
 /// @param lower The lower stack pointer.
