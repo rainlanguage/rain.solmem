@@ -19,6 +19,14 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 These libraries assume the caller knows what they're doing with memory. Out-of-
 bounds access, double-frees, and aliasing are the caller's responsibility.
 
+## Requirements
+
+- **solc `^0.8.25`**, which every source file declares.
+- **`evm_version = "cancun"` or later, and a chain with cancun activated.**
+  Every copy path compiles to the `mcopy` opcode. Building below cancun fails at
+  compile time; cancun bytecode on a chain without cancun reverts with
+  `invalid opcode` at runtime.
+
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):
