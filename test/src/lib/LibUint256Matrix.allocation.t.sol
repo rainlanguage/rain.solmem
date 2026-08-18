@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibUint256Matrix, LibPointer, Pointer} from "src/lib/LibUint256Matrix.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibUint256Matrix, LibPointer, Pointer} from "../../../src/lib/LibUint256Matrix.sol";
 
 /// The existing `flatten` tests assert the CONTENTS of the flattened array.
 /// `flatten` also performs an allocation, and an over-allocating `flatten`

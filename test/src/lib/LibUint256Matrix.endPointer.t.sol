@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibUint256Matrix, LibPointer, Pointer} from "src/lib/LibUint256Matrix.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibUint256Matrix, LibPointer, Pointer} from "../../../src/lib/LibUint256Matrix.sol";
 
 /// `endPointer` on a matrix is one word past the last REFERENCE, which is not
 /// the end of any allocation. The NatSpec on `endPointer` states where the inner

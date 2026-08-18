@@ -3,8 +3,8 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
 
 /// Extending an array by itself. Base and extend are then ONE array, so the in
 /// place path would rewrite the length word both of them read through, mutating

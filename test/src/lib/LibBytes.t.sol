@@ -3,9 +3,9 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
-import {LibBytes} from "src/lib/LibBytes.sol";
-import {OutOfBoundsTruncate} from "src/error/ErrTruncate.sol";
-import {LibPointer, Pointer, LibMemCpy} from "src/lib/LibMemCpy.sol";
+import {LibBytes} from "../../../src/lib/LibBytes.sol";
+import {OutOfBoundsTruncate} from "../../../src/error/ErrTruncate.sol";
+import {LibPointer, Pointer, LibMemCpy} from "../../../src/lib/LibMemCpy.sol";
 
 contract LibBytesTest is Test {
     using LibBytes for bytes;

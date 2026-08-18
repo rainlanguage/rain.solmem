@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {LibStackSentinel, Sentinel} from "src/lib/LibStackSentinel.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {Pointer} from "src/lib/LibPointer.sol";
+import {LibStackSentinel, Sentinel} from "../../../src/lib/LibStackSentinel.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {Pointer} from "../../../src/lib/LibPointer.sol";
 
 /// Harness for `LibStackSentinel.consumeSentinelTuples`.
 ///

@@ -3,7 +3,7 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
-import {LibStackSentinelWrapHarness} from "test/src/lib/LibStackSentinelWrapHarness.sol";
+import {LibStackSentinelWrapHarness} from "./LibStackSentinelWrapHarness.sol";
 
 /// Reproduces the `consumeSentinelTuples` half of issue #54.
 ///

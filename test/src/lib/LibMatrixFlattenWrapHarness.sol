@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2020 Rain Open Source Software Ltd
 pragma solidity =0.8.25;
 
-import {LibUint256Matrix} from "src/lib/LibUint256Matrix.sol";
-import {LibBytes32Matrix} from "src/lib/LibBytes32Matrix.sol";
+import {LibUint256Matrix} from "../../../src/lib/LibUint256Matrix.sol";
+import {LibBytes32Matrix} from "../../../src/lib/LibBytes32Matrix.sol";
 
 /// Harness for `itemCount` and `flatten` on both matrix libraries.
 ///

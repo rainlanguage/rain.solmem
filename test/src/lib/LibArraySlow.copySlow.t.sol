@@ -4,8 +4,8 @@ pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
 
-import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
-import {LibBytes32ArraySlow} from "test/lib/LibBytes32ArraySlow.sol";
+import {LibUint256ArraySlow} from "../../lib/LibUint256ArraySlow.sol";
+import {LibBytes32ArraySlow} from "../../lib/LibBytes32ArraySlow.sol";
 
 /// `copySlow` snapshots an input before it is handed to an implementation under
 /// test, so the differential tests can build their expected values from memory

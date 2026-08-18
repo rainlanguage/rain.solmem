@@ -3,8 +3,8 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.2/src/Test.sol";
-import {LibUint256Array} from "src/lib/LibUint256Array.sol";
-import {LibBytes32Array} from "src/lib/LibBytes32Array.sol";
+import {LibUint256Array} from "../../../src/lib/LibUint256Array.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
 
 /// The tail taking `arrayFrom` overloads allocate their output at the free
 /// memory pointer and read the tail's length word to size the copy. A tail that
