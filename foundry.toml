@@ -4,7 +4,7 @@
 # ignores; any other unreserved section it reads as a profile and warns about.
 [external.package]
 name = "rain-solmem"
-version = "0.1.25"
+version = "0.1.26"
 
 [profile.default]
 
