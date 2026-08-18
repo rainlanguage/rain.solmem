@@ -5,7 +5,7 @@ pragma solidity =0.8.25;
 import {Test} from "forge-std-1.16.1/src/Test.sol";
 import {LibUint256Array, Pointer} from "src/lib/LibUint256Array.sol";
 import {LibPointer} from "src/lib/LibPointer.sol";
-import {OutOfBoundsTruncate} from "src/error/ErrUint256Array.sol";
+import {OutOfBoundsTruncate} from "src/error/ErrTruncate.sol";
 import {LibUint256ArraySlow} from "test/lib/LibUint256ArraySlow.sol";
 
 contract LibUint256ArrayTruncateTest is Test {
