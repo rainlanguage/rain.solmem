@@ -5,4 +5,6 @@ pragma solidity ^0.8.25;
 /// Thrown if a truncated length is longer than the array being truncated. It is
 /// not possible to truncate something and increase its length as the memory
 /// region after the array MAY be allocated for something else already.
+/// @param arrayLength Actual array length.
+/// @param truncatedLength Attempted truncation length.
 error OutOfBoundsTruncate(uint256 arrayLength, uint256 truncatedLength);

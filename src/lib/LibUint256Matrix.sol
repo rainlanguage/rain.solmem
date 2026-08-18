@@ -6,6 +6,11 @@ pragma solidity ^0.8.25;
 // forge-lint: disable-next-line(unused-import)
 import {Pointer, LibPointer} from "./LibPointer.sol";
 
+/// @title LibUint256Matrix
+/// @notice Pointer access, literal construction and flattening for
+/// `uint256[][]`. A `uint256[][]` is a length prefixed array of POINTERS to
+/// `uint256[]`, not a contiguous block, so pointer arithmetic over a matrix
+/// walks the references only and never the inner arrays.
 library LibUint256Matrix {
     /// Pointer to the start (length prefix) of a `uint256[][]`.
     /// @param matrix The matrix to get the start pointer of.
@@ -172,11 +177,10 @@ library LibUint256Matrix {
     /// below it.
     /// @param matrix The matrix to flatten.
     /// @return array The flattened array.
-    function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
+    function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory array) {
         uint256 length = itemCount(matrix);
         uint256 dataSize = length * 0x20;
 
-        uint256[] memory array;
         assembly ("memory-safe") {
             array := mload(0x40)
             mstore(0x40, add(array, add(0x20, dataSize)))
@@ -193,6 +197,5 @@ library LibUint256Matrix {
                 cursor := add(cursor, 0x20)
             }
         }
-        return array;
     }
 }

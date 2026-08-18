@@ -6,6 +6,9 @@ pragma solidity ^0.8.25;
 // forge-lint: disable-next-line(unused-import)
 import {Pointer, LibPointer} from "./LibPointer.sol";
 
+/// @title LibMemCpy
+/// @notice Copying bytes and words between arbitrary memory pointers, with no
+/// allocation and no bounds checks.
 library LibMemCpy {
     /// Copy an arbitrary number of bytes from one location in memory to another.
     /// As of cancun this is a convenience wrapper for the `mcopy` opcode. The
