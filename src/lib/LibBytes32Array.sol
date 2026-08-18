@@ -323,7 +323,8 @@ library LibBytes32Array {
     /// the extend array after calling this function as it is never mutated, it
     /// is only copied from. Extending an array by itself therefore always
     /// allocates, as the in place path would rewrite the length word that base
-    /// and extend share.
+    /// and extend share. An uninitialised base also always allocates, as it
+    /// points at the permanently zero slot rather than at an allocation.
     ///
     /// Both arrays MUST be valid solidity memory arrays, each owning the region
     /// its own length word describes.
@@ -342,16 +343,20 @@ library LibBytes32Array {
                 let baseLength := mload(base)
                 let baseEnd := add(base, add(0x20, mul(baseLength, 0x20)))
 
-                // The in place path rewrites base's length word where it sits,
-                // and when extend IS base that word is also extend's length
-                // word, so the write would mutate extend. The in place path is
-                // therefore only taken when base is the last thing in allocated
-                // memory AND extend is a different array. Otherwise allocate,
-                // copy and recurse. The copy puts base above every existing
+                // The in place path rewrites base's length word where it sits.
+                // Below 0x80 there is no heap, only scratch space, the free
+                // memory pointer and the permanently zero slot that every
+                // uninitialised array points at, so a base there has no length
+                // word of its own to rewrite. When extend IS base that word is
+                // also extend's length word, so the write would mutate extend.
+                // The in place path is therefore only taken when base is a heap
+                // allocation that is the last thing in allocated memory AND
+                // extend is a different array. Otherwise allocate, copy and
+                // recurse. The copy puts base in the heap above every existing
                 // allocation, where it is both the last allocation and distinct
                 // from extend, so the recursion is one deep and lands on the in
                 // place path.
-                switch and(eq(outputCursor, baseEnd), iszero(eq(base, extend)))
+                switch and(and(eq(outputCursor, baseEnd), iszero(lt(base, 0x80))), iszero(eq(base, extend)))
                 case 0 {
                     let newBase := outputCursor
                     // Base size includes the length word and is in bytes.

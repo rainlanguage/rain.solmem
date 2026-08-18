@@ -106,4 +106,46 @@ contract LibUint256ArrayExtendTest is Test {
         b[3] = 0x70;
         testExtendAllocate(a, b);
     }
+
+    /// An uninitialised array points at the permanently zero slot at 0x60, and
+    /// in a frame that has allocated nothing the free memory pointer sits
+    /// exactly at the end of it. The in place path would rewrite the zero slot
+    /// there, so an uninitialised base allocates instead: the slot stays zero
+    /// and every later empty array in the frame still reads a zero length
+    /// through it.
+    function testExtendUninitialisedBaseNeverWritesTheZeroSlot() public pure {
+        uint256[] memory base;
+        uint256[] memory extend;
+
+        // Deliberately NOT ("memory-safe"): extend is put in the scratch space
+        // so that nothing is allocated and the free memory pointer stays at the
+        // end of the zero slot base points at. The pointer is read here rather
+        // than after the call because assertions allocate.
+        uint256 fmpAtCall;
+        assembly {
+            mstore(0x00, 1)
+            mstore(0x20, 0xDEADBEEF)
+            extend := 0x00
+            fmpAtCall := mload(0x40)
+        }
+
+        uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
+
+        uint256[] memory later;
+        uint256 zeroSlot;
+        uint256 laterLength;
+        uint256 extendedPointer;
+        assembly {
+            zeroSlot := mload(0x60)
+            laterLength := mload(later)
+            extendedPointer := extended
+        }
+
+        assertEq(fmpAtCall, 0x80, "base must be the last thing below the free memory pointer");
+        assertEq(extendedPointer, 0x80, "the copy must land at the bottom of the heap");
+        assertEq(zeroSlot, 0, "zero slot written");
+        assertEq(laterLength, 0, "a later empty array must still read a zero length");
+        assertEq(extended.length, 1, "length");
+        assertEq(extended[0], 0xDEADBEEF, "0");
+    }
 }
