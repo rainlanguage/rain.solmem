@@ -102,10 +102,21 @@ Use the nix-pinned `forge` for all development to keep versions consistent.
 
 ## Publish
 
-Tag `v<x.y.z>` on `main`. The
-[`Publish to Soldeer`](.github/workflows/publish-soldeer.yaml) workflow runs
-`forge soldeer push rain-solmem~<x.y.z>` on every `v*` tag. The package name is
-derived from the repo name with `.` substituted for `-`.
+Publishing is merge-driven; there is no release tag to push. On every push to
+`main`, [`Package Release`](.github/workflows/package-release.yaml) calls
+rainix's `rainix-autopublish`, which compares the package content against the
+latest published revision. If it differs, it runs
+`forge soldeer push rain-solmem~<version>`, tags `sol-v<version>`, and commits a
+bump of `[package] version` back to `main`.
+
+`[package] version` in `foundry.toml` is the **next, unpublished** version, not
+the current one. It is always one ahead of the registry; do not "correct" it to
+match.
+
+Everything [`.soldeerignore`](.soldeerignore) does not exclude ships — `src/**`,
+`README.md`, `LICENSE`, `LICENSES/`, `REUSE.toml` — and any change to it
+publishes a new revision, including a comment-only edit. Soldeer revisions are
+immutable and cannot be deleted.
 
 ## License
 
