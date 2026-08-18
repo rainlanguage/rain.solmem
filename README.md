@@ -50,23 +50,6 @@ forge soldeer install # install dependencies declared in foundry.toml
 forge test
 ```
 
-Tasks in the shell:
-
-- `forge build` — compile.
-- `forge test` — the test suite.
-- `forge fmt --check` — formatting.
-- `slither .` — static analysis, config in `slither.config.json`.
-- `reuse lint` — REUSE compliance.
-
-CI runs all of those except `forge build`, plus `rainix-sol-single-contract`,
-which this repo's pinned rainix does not provide.
-
-`rainix-sol-artifacts` is on `PATH` too and is not a build. It runs
-`forge selectors up --all` against the public selector registry, then
-`forge script script/Deploy.sol` against `$ETH_RPC_URL` signed with
-`DEPLOYMENT_KEY`, broadcasting when `DEPLOY_BROADCAST` is set. There is no
-`script/` directory here. Do not run it.
-
 Use the nix-pinned `forge` for all development to keep versions consistent.
 
 ## Publish
