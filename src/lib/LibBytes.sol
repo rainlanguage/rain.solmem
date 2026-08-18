@@ -43,19 +43,27 @@ library LibBytes {
     /// start of a multiple of 32, UNLIKE the free memory pointer at 0x40.
     ///
     /// @param data Bytes to get the pointer to the end of.
-    /// @return pointer Pointer to the end of the bytes data structure.
+    /// @return pointer Pointer to the first byte after the `length` bytes of
+    /// data, i.e. NOT including the word alignment padding. Use
+    /// `endAllocatedPointer` for the end of the word aligned region.
     function endDataPointer(bytes memory data) internal pure returns (Pointer pointer) {
         assembly ("memory-safe") {
             pointer := add(data, add(0x20, mload(data)))
         }
     }
 
-    /// Pointer to the end of the memory allocated for bytes.
+    /// Pointer to the end of the word aligned region implied by the CURRENT
+    /// length of some bytes.
     ///
     /// The allocator is ALWAYS aligned to whole words, i.e. 32 byte multiples,
     /// for data structures allocated by Solidity. This includes `bytes` which
     /// means that any time the length of some `bytes` is NOT a multiple of 32
-    /// the alloation will point past the end of the `bytes` data.
+    /// the allocation will point past the end of the `bytes` data.
+    ///
+    /// This is the end of the memory Solidity allocated only while the length
+    /// word is the one Solidity wrote. `truncate` mutates the length word and
+    /// leaks the tail, so after a truncation this pointer is BELOW the end of
+    /// the real allocation by the size of the leaked region.
     ///
     /// There is no guarantee that the memory region between `endDataPointer`
     /// and `endAllocatedPointer` is zeroed out. It is best to think of that
@@ -63,8 +71,9 @@ library LibBytes {
     ///
     /// Almost always, e.g. for the purpose of copying data between regions, you
     /// will want `endDataPointer` rather than this function.
-    /// @param data Bytes to get the end of the allocated data region for.
-    /// @return pointer Pointer to the end of the allocated data region.
+    /// @param data Bytes to get the end of the word aligned region for.
+    /// @return pointer Pointer to the end of the word aligned region implied by
+    /// the current length.
     function endAllocatedPointer(bytes memory data) internal pure returns (Pointer pointer) {
         assembly ("memory-safe") {
             pointer := add(data, and(add(add(mload(data), 0x20), 0x1f), not(0x1f)))

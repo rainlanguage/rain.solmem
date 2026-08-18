@@ -27,11 +27,22 @@ library LibBytes32Matrix {
         }
     }
 
-    /// Pointer to the end of the allocated memory of a matrix.
-    /// Note that the data of a `bytes32[][]` is _references_ to the `bytes32[]`
-    /// start pointers and does NOT include the arrays themselves.
+    /// Pointer to one word past the last `bytes32[]` REFERENCE in a matrix,
+    /// i.e. the end of the matrix's pointer array.
+    ///
+    /// This is NOT the end of the memory allocated for the matrix. The data of a
+    /// `bytes32[][]` is _references_ to the `bytes32[]` start pointers and does
+    /// NOT include the arrays themselves. Those arrays are separate allocations
+    /// lying outside the pointer array entirely: above it for a matrix built by
+    /// `new bytes32[][](n)`, below it for a matrix built by `matrixFrom` from
+    /// existing arrays. A matrix is therefore not one contiguous allocation and
+    /// no pointer marks the end of it.
+    ///
+    /// Allocating or writing at this pointer overwrites whatever sits above the
+    /// pointer array. For a matrix built by `new bytes32[][](n)` that is the
+    /// inner arrays themselves, so it corrupts the matrix.
     /// @param matrix The matrix to get the end pointer of.
-    /// @return pointer The pointer to the end of `matrix`.
+    /// @return pointer The pointer one word past the last reference in `matrix`.
     function endPointer(bytes32[][] memory matrix) internal pure returns (Pointer pointer) {
         assembly ("memory-safe") {
             pointer := add(matrix, add(0x20, mul(0x20, mload(matrix))))

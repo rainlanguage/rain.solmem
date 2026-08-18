@@ -29,9 +29,15 @@ library LibUint256Array {
         }
     }
 
-    /// Pointer to the end of the allocated memory of an array.
+    /// Pointer to the end of the data of an array, i.e. one word past its last
+    /// item.
+    ///
+    /// This is derived from the CURRENT length word, so it is the end of the
+    /// allocated region only for an array that has not been shrunk. `truncate`
+    /// mutates the length word and leaks the tail, so after a truncation the
+    /// allocation extends beyond this pointer.
     /// @param array The array to get the end pointer of.
-    /// @return pointer The pointer to the end of `array`.
+    /// @return pointer The pointer to the end of the data of `array`.
     function endPointer(uint256[] memory array) internal pure returns (Pointer pointer) {
         assembly ("memory-safe") {
             pointer := add(array, add(0x20, mul(0x20, mload(array))))

@@ -47,6 +47,11 @@ contract LibBytesTest is Test {
     /// a `bytes` in memory rather than from the implementation: a 32 byte length
     /// prefix, then `length` bytes of data, then padding out to a whole number
     /// of 32 byte words.
+    ///
+    /// Every value here derives from the CURRENT length word, so the last of
+    /// them is the end of the real allocation only for `data` that has not been
+    /// truncated. `testEndAllocatedPointerDivergesAfterTruncate` pins the case
+    /// where it is not.
     function checkPointers(bytes memory data, uint256 length) internal pure {
         uint256 start = Pointer.unwrap(data.startPointer());
 
@@ -95,6 +100,27 @@ contract LibBytesTest is Test {
             assertEq(uint8(data[i]), uint8((i % 251) + 1));
         }
         checkPointers(data, 300);
+    }
+
+    /// `endAllocatedPointer` is derived from the CURRENT length word, so it is
+    /// the end of the memory Solidity reserved only while that word is the one
+    /// Solidity wrote. `truncate` mutates it and leaks the tail, which leaves
+    /// the reported pointer below the end of the real allocation.
+    function testEndAllocatedPointerDivergesAfterTruncate() public pure {
+        bytes memory data = new bytes(1000);
+        // Read the free memory pointer before any assertion, as assertions
+        // allocate. Nothing has been allocated since `data`, so this is the end
+        // of its allocation: 1000 bytes padded up to 1024.
+        uint256 allocationEnd = uint256(Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
+        uint256 endBefore = uint256(Pointer.unwrap(data.endAllocatedPointer()));
+
+        data.truncate(300);
+        uint256 endAfter = uint256(Pointer.unwrap(data.endAllocatedPointer()));
+
+        assertEq(endBefore, allocationEnd, "untruncated: end of the allocation");
+        // 300 bytes pad up to 320, leaving 704 bytes of the 1024 leaked above
+        // the reported pointer and still inside the allocation.
+        assertEq(allocationEnd - endAfter, 704, "truncated: leaked tail above endAllocatedPointer");
     }
 
     /// Truncating to exactly the current length is a no-op, NOT a revert.
