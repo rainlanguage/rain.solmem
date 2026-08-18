@@ -5,64 +5,100 @@ pragma solidity ^0.8.25;
 // keeping this import here so downstream code can get LibPointer easily.
 // forge-lint: disable-next-line(unused-import)
 import {Pointer, LibPointer} from "./LibPointer.sol";
+import {LibBytes32Matrix} from "./LibBytes32Matrix.sol";
 
 /// @title LibUint256Matrix
-/// @notice Pointer access, literal construction and flattening for
-/// `uint256[][]`. A `uint256[][]` is a length prefixed array of POINTERS to
-/// `uint256[]`, not a contiguous block, so pointer arithmetic over a matrix
-/// walks the references only and never the inner arrays.
+/// @notice The numeric view over `LibBytes32Matrix`.
+///
+/// `uint256[][]` and `bytes32[][]` are the same structure in memory: a length
+/// word followed by full width pointers to the sub arrays, which are themselves
+/// the same structure for both element types. Relabelling one as the other is
+/// therefore a no-op on memory, and the two libraries can share a single
+/// implementation instead of being kept in sync by hand.
+///
+/// `LibBytes32Matrix` holds that implementation and every function here
+/// delegates to it, so the behavioural contract, the safety obligations on the
+/// caller and the revert conditions are all defined there. This file adds
+/// nothing but the relabel: read `LibBytes32Matrix` for what these functions
+/// actually do.
+///
+/// All of it is `internal`, so there is no call boundary between the two
+/// libraries and the optimiser inlines the whole chain into the caller.
 library LibUint256Matrix {
+    /// Relabel a `uint256[]` as a `bytes32[]`. Same bits, same layout, no work.
+    /// @param array The array to relabel.
+    /// @return relabelled The same memory, typed as `bytes32[]`.
+    function asBytes32Array(uint256[] memory array) private pure returns (bytes32[] memory relabelled) {
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+    }
+
+    /// Relabel a `bytes32[]` as a `uint256[]`. Same bits, same layout, no work.
+    /// @param array The array to relabel.
+    /// @return relabelled The same memory, typed as `uint256[]`.
+    function asUint256Array(bytes32[] memory array) private pure returns (uint256[] memory relabelled) {
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+    }
+
+    /// Relabel a `uint256[][]` as a `bytes32[][]`. Same bits, same layout, no
+    /// work.
+    /// @param matrix The matrix to relabel.
+    /// @return relabelled The same memory, typed as `bytes32[][]`.
+    function asBytes32Matrix(uint256[][] memory matrix) private pure returns (bytes32[][] memory relabelled) {
+        assembly ("memory-safe") {
+            relabelled := matrix
+        }
+    }
+
+    /// Relabel a `bytes32[][]` as a `uint256[][]`. Same bits, same layout, no
+    /// work.
+    /// @param matrix The matrix to relabel.
+    /// @return relabelled The same memory, typed as `uint256[][]`.
+    function asUint256Matrix(bytes32[][] memory matrix) private pure returns (uint256[][] memory relabelled) {
+        assembly ("memory-safe") {
+            relabelled := matrix
+        }
+    }
+
     /// Pointer to the start (length prefix) of a `uint256[][]`.
+    /// See `LibBytes32Matrix.startPointer`.
     /// @param matrix The matrix to get the start pointer of.
     /// @return pointer The pointer to the start of `matrix`.
     function startPointer(uint256[][] memory matrix) internal pure returns (Pointer pointer) {
-        assembly ("memory-safe") {
-            pointer := matrix
-        }
+        return LibBytes32Matrix.startPointer(asBytes32Matrix(matrix));
     }
 
     /// Pointer to the data of a `uint256[][]` NOT the length prefix.
     /// Note that the data of a `uint256[][]` is _references_ to the `uint256[]`
     /// start pointers and does NOT include the arrays themselves.
+    /// See `LibBytes32Matrix.dataPointer`.
     /// @param matrix The matrix to get the data pointer of.
     /// @return pointer The pointer to the data of `matrix`.
     function dataPointer(uint256[][] memory matrix) internal pure returns (Pointer pointer) {
-        assembly ("memory-safe") {
-            pointer := add(matrix, 0x20)
-        }
+        return LibBytes32Matrix.dataPointer(asBytes32Matrix(matrix));
     }
 
     /// Pointer to one word past the last `uint256[]` REFERENCE in a matrix,
     /// i.e. the end of the matrix's pointer array.
     ///
-    /// This is NOT the end of the memory allocated for the matrix. The data of a
-    /// `uint256[][]` is _references_ to the `uint256[]` start pointers and does
-    /// NOT include the arrays themselves. Those arrays are separate allocations
-    /// lying outside the pointer array entirely: above it for a matrix built by
-    /// `new uint256[][](n)`, below it for a matrix built by `matrixFrom` from
-    /// existing arrays. A matrix is therefore not one contiguous allocation and
-    /// no pointer marks the end of it.
-    ///
-    /// Allocating or writing at this pointer overwrites whatever sits above the
-    /// pointer array. For a matrix built by `new uint256[][](n)` that is the
-    /// inner arrays themselves, so it corrupts the matrix.
+    /// This is NOT the end of the memory allocated for the matrix, and writing
+    /// at it can corrupt the matrix. See `LibBytes32Matrix.endPointer` for why.
     /// @param matrix The matrix to get the end pointer of.
     /// @return pointer The pointer one word past the last reference in `matrix`.
     function endPointer(uint256[][] memory matrix) internal pure returns (Pointer pointer) {
-        assembly ("memory-safe") {
-            pointer := add(matrix, add(0x20, mul(0x20, mload(matrix))))
-        }
+        return LibBytes32Matrix.endPointer(asBytes32Matrix(matrix));
     }
 
     /// Cast a `Pointer` to `uint256[][]` without modification or safety checks.
     /// The caller MUST ensure the pointer is to a valid region of memory for
-    /// some `uint256[][]`.
+    /// some `uint256[][]`. See `LibBytes32Matrix.unsafeAsBytes32Matrix`.
     /// @param pointer The pointer to cast to `uint256[][]`.
     /// @return matrix The cast `uint256[][]`.
     function unsafeAsUint256Matrix(Pointer pointer) internal pure returns (uint256[][] memory matrix) {
-        assembly ("memory-safe") {
-            matrix := pointer
-        }
+        return asUint256Matrix(LibBytes32Matrix.unsafeAsBytes32Matrix(pointer));
     }
 
     /// 2-dimensional analogue of `arrayFrom`. Takes a 1-dimensional array and
@@ -71,12 +107,7 @@ library LibUint256Matrix {
     /// @param a The 1-dimensional array to include in the matrix.
     /// @return matrix The 2-dimensional matrix containing `a`.
     function matrixFrom(uint256[] memory a) internal pure returns (uint256[][] memory matrix) {
-        assembly ("memory-safe") {
-            matrix := mload(0x40)
-            mstore(matrix, 1)
-            mstore(add(matrix, 0x20), a)
-            mstore(0x40, add(matrix, 0x40))
-        }
+        return asUint256Matrix(LibBytes32Matrix.matrixFrom(asBytes32Array(a)));
     }
 
     /// 2-dimensional analogue of `arrayFrom`. Takes 1-dimensional arrays and
@@ -86,13 +117,7 @@ library LibUint256Matrix {
     /// @param b Second 1-dimensional array to include in the matrix.
     /// @return matrix The 2-dimensional matrix containing `a` and `b`.
     function matrixFrom(uint256[] memory a, uint256[] memory b) internal pure returns (uint256[][] memory matrix) {
-        assembly ("memory-safe") {
-            matrix := mload(0x40)
-            mstore(matrix, 2)
-            mstore(add(matrix, 0x20), a)
-            mstore(add(matrix, 0x40), b)
-            mstore(0x40, add(matrix, 0x60))
-        }
+        return asUint256Matrix(LibBytes32Matrix.matrixFrom(asBytes32Array(a), asBytes32Array(b)));
     }
 
     /// 2-dimensional analogue of `arrayFrom`. Takes 1-dimensional arrays and
@@ -107,97 +132,30 @@ library LibUint256Matrix {
         pure
         returns (uint256[][] memory matrix)
     {
-        assembly ("memory-safe") {
-            matrix := mload(0x40)
-            mstore(matrix, 3)
-            mstore(add(matrix, 0x20), a)
-            mstore(add(matrix, 0x40), b)
-            mstore(add(matrix, 0x60), c)
-            mstore(0x40, add(matrix, 0x80))
-        }
+        return asUint256Matrix(LibBytes32Matrix.matrixFrom(asBytes32Array(a), asBytes32Array(b), asBytes32Array(c)));
     }
 
     /// Counts the total number of items in the matrix across all internal
     /// arrays. Normally `matrix.length` only returns the number of internal
     /// arrays, not the total number of items in the matrix.
     ///
-    /// The running total is guarded against overflow, so a matrix whose sub
-    /// array length words sum to more than `type(uint256).max` reverts with an
-    /// arithmetic panic instead of wrapping to a total that is smaller than one
-    /// of the sub arrays it is totalling. That is only reachable for length
-    /// words that do not describe real allocations, as every real item costs 32
-    /// bytes of memory.
+    /// Reverts with an arithmetic panic on overflow of the running total.
+    /// See `LibBytes32Matrix.itemCount`.
     /// @param matrix The matrix to count the items of.
     /// @return count The total number of items across every sub array.
     function itemCount(uint256[][] memory matrix) internal pure returns (uint256 count) {
-        assembly ("memory-safe") {
-            let cursor := add(matrix, 0x20)
-            let end := add(cursor, mul(mload(matrix), 0x20))
-
-            for {} lt(cursor, end) {} {
-                let subCount := mload(mload(cursor))
-                count := add(count, subCount)
-                // A total that is smaller than the part just added to it
-                // wrapped. Revert with `Panic(uint256)` code 0x11, byte for
-                // byte what checked Solidity arithmetic produces for an
-                // overflow. Memory 0x00 to 0x40 is scratch space, so writing
-                // the revert data there is memory safe.
-                if lt(count, subCount) {
-                    mstore(0x00, 0x4e487b71)
-                    mstore(0x20, 0x11)
-                    revert(0x1c, 0x24)
-                }
-                cursor := add(cursor, 0x20)
-            }
-        }
+        return LibBytes32Matrix.itemCount(asBytes32Matrix(matrix));
     }
 
     /// Allocates and builds a new `uint256[]` from a `uint256[][]`. This is
     /// potentially memory intensive and expensive, but there's no way around
-    /// the allocation if a flat array is needed. This is because 2-dimensional
-    /// arrays are stored as a length-prefixed array of pointers to 1-dimensional
-    /// arrays, not as a contiguous block of memory.
+    /// the allocation if a flat array is needed.
     ///
-    /// The item count is scaled to a size in bytes with checked arithmetic, so
-    /// a matrix whose total item count cannot be scaled reverts with an
-    /// arithmetic panic. A scaling that wrapped would size the allocation from
-    /// one number while the length word stamped on the result is another,
-    /// handing back an ordinary `uint256[]` whose declared length far exceeds
-    /// the memory reserved for it. Solidity's own bounds check trusts that
-    /// length word, so such an array is a read and write primitive over the
-    /// rest of memory.
-    ///
-    /// The per sub array scaling in the copy loop needs no guard of its own.
-    /// The checked scaling above bounds the total at `type(uint256).max /
-    /// 0x20`, and because `itemCount` sums without wrapping, no sub array
-    /// declares more items than that total, so scaling a sub array length
-    /// cannot wrap either. The copy loop re-reads those same length words and
-    /// cannot itself have disturbed them, as it only ever writes above the free
-    /// memory pointer as it stood on entry and every allocated sub array is
-    /// below it.
+    /// Reverts with an arithmetic panic if the total item count cannot be
+    /// scaled to a size in bytes. See `LibBytes32Matrix.flatten`.
     /// @param matrix The matrix to flatten.
     /// @return The flattened array.
     function flatten(uint256[][] memory matrix) internal pure returns (uint256[] memory) {
-        uint256 length = itemCount(matrix);
-        uint256 dataSize = length * 0x20;
-
-        uint256[] memory array;
-        assembly ("memory-safe") {
-            array := mload(0x40)
-            mstore(0x40, add(array, add(0x20, dataSize)))
-            mstore(array, length)
-
-            let cursor := add(matrix, 0x20)
-            let end := add(cursor, mul(mload(matrix), 0x20))
-
-            let arrayCursor := add(array, 0x20)
-            for {} lt(cursor, end) {} {
-                let size := mul(mload(mload(cursor)), 0x20)
-                mcopy(arrayCursor, add(mload(cursor), 0x20), size)
-                arrayCursor := add(arrayCursor, size)
-                cursor := add(cursor, 0x20)
-            }
-        }
-        return array;
+        return asUint256Array(LibBytes32Matrix.flatten(asBytes32Matrix(matrix)));
     }
 }
