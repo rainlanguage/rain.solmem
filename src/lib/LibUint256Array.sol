@@ -27,33 +27,24 @@ import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 /// nothing but the relabel: read `LibBytes32Array` for what these functions
 /// actually do.
 ///
+/// Every relabel is a bare `:=` in an inline assembly block at the point it is
+/// needed. Each one copies a pointer between two identically shaped types and
+/// touches no memory, so there is nothing for a helper to hoist except the
+/// pointer copy itself.
+///
 /// All of it is `internal`, so there is no call boundary between the two
 /// libraries and the optimiser inlines the whole chain into the caller.
 library LibUint256Array {
-    /// Relabel a `uint256[]` as a `bytes32[]`. Same bits, same layout, no work.
-    /// @param array The array to relabel.
-    /// @return relabelled The same memory, typed as `bytes32[]`.
-    function asBytes32Array(uint256[] memory array) private pure returns (bytes32[] memory relabelled) {
-        assembly ("memory-safe") {
-            relabelled := array
-        }
-    }
-
-    /// Relabel a `bytes32[]` as a `uint256[]`. Same bits, same layout, no work.
-    /// @param array The array to relabel.
-    /// @return relabelled The same memory, typed as `uint256[]`.
-    function asUint256Array(bytes32[] memory array) private pure returns (uint256[] memory relabelled) {
-        assembly ("memory-safe") {
-            relabelled := array
-        }
-    }
-
     /// Pointer to the start (length prefix) of a `uint256[]`.
     /// See `LibBytes32Array.startPointer`.
     /// @param array The array to get the start pointer of.
     /// @return pointer The pointer to the start of `array`.
     function startPointer(uint256[] memory array) internal pure returns (Pointer pointer) {
-        return LibBytes32Array.startPointer(asBytes32Array(array));
+        bytes32[] memory relabelled;
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+        return LibBytes32Array.startPointer(relabelled);
     }
 
     /// Pointer to the data of a `uint256[]` NOT the length prefix.
@@ -61,7 +52,11 @@ library LibUint256Array {
     /// @param array The array to get the data pointer of.
     /// @return pointer The pointer to the data of `array`.
     function dataPointer(uint256[] memory array) internal pure returns (Pointer pointer) {
-        return LibBytes32Array.dataPointer(asBytes32Array(array));
+        bytes32[] memory relabelled;
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+        return LibBytes32Array.dataPointer(relabelled);
     }
 
     /// Pointer to the end of the data of an array, i.e. one word past its last
@@ -70,7 +65,11 @@ library LibUint256Array {
     /// @param array The array to get the end pointer of.
     /// @return pointer The pointer to the end of the data of `array`.
     function endPointer(uint256[] memory array) internal pure returns (Pointer pointer) {
-        return LibBytes32Array.endPointer(asBytes32Array(array));
+        bytes32[] memory relabelled;
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+        return LibBytes32Array.endPointer(relabelled);
     }
 
     /// Cast a `Pointer` to `uint256[]` without modification or safety checks.
@@ -79,7 +78,10 @@ library LibUint256Array {
     /// @param pointer The pointer to cast to `uint256[]`.
     /// @return array The cast `uint256[]`.
     function unsafeAsUint256Array(Pointer pointer) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.unsafeAsBytes32Array(pointer));
+        bytes32[] memory relabelled = LibBytes32Array.unsafeAsBytes32Array(pointer);
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -87,7 +89,10 @@ library LibUint256Array {
     /// @param a A single integer to build an array around.
     /// @return array The newly allocated array including `a` as a single item.
     function arrayFrom(uint256 a) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a)));
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -97,7 +102,10 @@ library LibUint256Array {
     /// @return array The newly allocated array including `a` and `b` as the only
     /// items.
     function arrayFrom(uint256 a, uint256 b) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), bytes32(b)));
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a), bytes32(b));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -108,7 +116,10 @@ library LibUint256Array {
     /// @return array The newly allocated array including `a`, `b` and `c` as the
     /// only items.
     function arrayFrom(uint256 a, uint256 b, uint256 c) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c)));
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -120,7 +131,10 @@ library LibUint256Array {
     /// @return array The newly allocated array including `a`, `b`, `c` and `d` as the
     /// only items.
     function arrayFrom(uint256 a, uint256 b, uint256 c, uint256 d) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d)));
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -137,7 +151,11 @@ library LibUint256Array {
         pure
         returns (uint256[] memory array)
     {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e)));
+        bytes32[] memory relabelled =
+            LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -155,9 +173,11 @@ library LibUint256Array {
         pure
         returns (uint256[] memory array)
     {
-        return asUint256Array(
-            LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f))
-        );
+        bytes32[] memory relabelled =
+            LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f));
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -176,11 +196,12 @@ library LibUint256Array {
         pure
         returns (uint256[] memory array)
     {
-        return asUint256Array(
-            LibBytes32Array.arrayFrom(
-                bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f), bytes32(g)
-            )
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(
+            bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f), bytes32(g)
         );
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -200,11 +221,12 @@ library LibUint256Array {
         pure
         returns (uint256[] memory array)
     {
-        return asUint256Array(
-            LibBytes32Array.arrayFrom(
-                bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f), bytes32(g), bytes32(h)
-            )
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(
+            bytes32(a), bytes32(b), bytes32(c), bytes32(d), bytes32(e), bytes32(f), bytes32(g), bytes32(h)
         );
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -213,7 +235,14 @@ library LibUint256Array {
     /// @param tail The tail of the new array.
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256[] memory tail) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), asBytes32Array(tail)));
+        bytes32[] memory relabelledTail;
+        assembly ("memory-safe") {
+            relabelledTail := tail
+        }
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a), relabelledTail);
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Building arrays from literal components is a common task that introduces
@@ -223,7 +252,14 @@ library LibUint256Array {
     /// @param tail The tail of the new array.
     /// @return array The new array.
     function arrayFrom(uint256 a, uint256 b, uint256[] memory tail) internal pure returns (uint256[] memory array) {
-        return asUint256Array(LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), asBytes32Array(tail)));
+        bytes32[] memory relabelledTail;
+        assembly ("memory-safe") {
+            relabelledTail := tail
+        }
+        bytes32[] memory relabelled = LibBytes32Array.arrayFrom(bytes32(a), bytes32(b), relabelledTail);
+        assembly ("memory-safe") {
+            array := relabelled
+        }
     }
 
     /// Shrinks an array by mutating its length word directly. The truncated
@@ -237,7 +273,11 @@ library LibUint256Array {
     /// @param newLength The new length of `array` after truncation. MUST NOT
     /// be greater than `array.length`.
     function truncate(uint256[] memory array, uint256 newLength) internal pure {
-        LibBytes32Array.truncate(asBytes32Array(array), newLength);
+        bytes32[] memory relabelled;
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+        LibBytes32Array.truncate(relabelled, newLength);
     }
 
     /// Extends `baseArray` with `extendArray`, allocating only when it must.
@@ -259,7 +299,16 @@ library LibUint256Array {
         pure
         returns (uint256[] memory extended)
     {
-        return asUint256Array(LibBytes32Array.unsafeExtend(asBytes32Array(baseArray), asBytes32Array(extendArray)));
+        bytes32[] memory relabelledBase;
+        bytes32[] memory relabelledExtend;
+        assembly ("memory-safe") {
+            relabelledBase := baseArray
+            relabelledExtend := extendArray
+        }
+        bytes32[] memory relabelled = LibBytes32Array.unsafeExtend(relabelledBase, relabelledExtend);
+        assembly ("memory-safe") {
+            extended := relabelled
+        }
     }
 
     /// Reverse an array in place. This is a destructive operation that MUTATES
@@ -267,6 +316,10 @@ library LibUint256Array {
     /// See `LibBytes32Array.reverse`.
     /// @param array The array to reverse.
     function reverse(uint256[] memory array) internal pure {
-        LibBytes32Array.reverse(asBytes32Array(array));
+        bytes32[] memory relabelled;
+        assembly ("memory-safe") {
+            relabelled := array
+        }
+        LibBytes32Array.reverse(relabelled);
     }
 }
