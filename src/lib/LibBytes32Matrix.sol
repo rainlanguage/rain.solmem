@@ -176,11 +176,12 @@ library LibBytes32Matrix {
     /// memory pointer as it stood on entry and every allocated sub array is
     /// below it.
     /// @param matrix The matrix to flatten.
-    /// @return array The flattened array.
-    function flatten(bytes32[][] memory matrix) internal pure returns (bytes32[] memory array) {
+    /// @return The flattened array.
+    function flatten(bytes32[][] memory matrix) internal pure returns (bytes32[] memory) {
         uint256 length = itemCount(matrix);
         uint256 dataSize = length * 0x20;
 
+        bytes32[] memory array;
         assembly ("memory-safe") {
             array := mload(0x40)
             mstore(0x40, add(array, add(0x20, dataSize)))
@@ -197,5 +198,6 @@ library LibBytes32Matrix {
                 cursor := add(cursor, 0x20)
             }
         }
+        return array;
     }
 }
