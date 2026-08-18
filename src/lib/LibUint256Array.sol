@@ -313,17 +313,16 @@ library LibUint256Array {
         }
     }
 
-    /// Extends `base_` with `extend_` by allocating only an additional
-    /// `extend_.length` words onto `base_` and copying only `extend_` if
-    /// possible. If `base_` is large this MAY be significantly more efficient
-    /// than allocating `base_.length + extend_.length` for an entirely new array
-    /// and copying both `base_` and `extend_` into the new array one item at a
-    /// time in Solidity.
+    /// Extends `b` with `e` by allocating only an additional `e.length` words
+    /// onto `b` and copying only `e` if possible. If `b` is large this MAY be
+    /// significantly more efficient than allocating `b.length + e.length` for
+    /// an entirely new array and copying both `b` and `e` into the new array
+    /// one item at a time in Solidity.
     ///
     /// The efficient version of extension is only possible if the free memory
     /// pointer sits at the end of the base array at the moment of extension. If
     /// there is allocated memory after the end of base then extension will
-    /// require copying both the base and extend arays to a new region of memory.
+    /// require copying both the base and extend arrays to a new region of memory.
     /// The caller is responsible for optimising code paths to avoid additional
     /// allocations.
     ///
