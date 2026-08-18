@@ -319,6 +319,9 @@ library LibUint256Array {
     /// allocates, as the in place path would rewrite the length word that base
     /// and extend share.
     ///
+    /// Both arrays MUST be valid solidity memory arrays, each owning the region
+    /// its own length word describes.
+    ///
     /// @param b The base integer array that will be extended by `e`.
     /// @param e The extend integer array that extends `b`.
     /// @return extended The extended array of `b` extended by `e`.
