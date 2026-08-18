@@ -86,8 +86,6 @@ type Sentinel is uint256;
 /// rather than individual stack values. Assembly is used to keep the looping
 /// overhead to a minimum.
 library LibStackSentinel {
-    using LibStackSentinel for Pointer;
-
     /// Given two stack pointers that bound a stack build an array of
     /// `tupleSize` item tuples above the given sentinel value. The sentinel
     /// will be skipped and a pointer below it returned alongside the tuples
