@@ -3,7 +3,7 @@
 pragma solidity ^0.8.25;
 
 import {Pointer} from "./LibPointer.sol";
-import {TruncateError} from "../error/ErrBytes.sol";
+import {OutOfBoundsTruncate} from "../error/ErrTruncate.sol";
 
 /// @title LibBytes
 /// @notice Tools for working directly with memory in a Solidity compatible way.
@@ -12,7 +12,7 @@ library LibBytes {
     /// Any excess bytes are leaked
     function truncate(bytes memory data, uint256 length) internal pure {
         if (data.length < length) {
-            revert TruncateError(data.length, length);
+            revert OutOfBoundsTruncate(data.length, length);
         }
         assembly ("memory-safe") {
             mstore(data, length)

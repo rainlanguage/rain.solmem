@@ -94,6 +94,81 @@ contract LibUint256ArrayExtendTest is Test {
         assertNotEq(baseBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "allocate path not taken");
     }
 
+    /// An empty base contributes nothing, so the extended array is the extend
+    /// array's contents. The inline path returns the pointer it was given.
+    function testExtendInlineEmptyBaseKeepsBasePointer() public pure {
+        uint256[] memory extend = new uint256[](2);
+        extend[0] = 0x44;
+        extend[1] = 0x55;
+
+        // Allocated last, so base is the most recent allocation.
+        uint256[] memory base = new uint256[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibUint256Array.startPointer(base));
+        uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 2, "length");
+        assertEq(extended[0], 0x44, "0");
+        assertEq(extended[1], 0x55, "1");
+        assertEq(baseBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "inline path not taken");
+    }
+
+    /// The allocating counterpart of the case above. The result is a fresh
+    /// region aliasing neither input, so a later write through the result
+    /// cannot reach the extend array.
+    function testExtendAllocateEmptyBaseAllocatesFreshRegion() public pure {
+        uint256[] memory base = new uint256[](0);
+
+        // Allocated after base, so base is no longer the most recent
+        // allocation.
+        uint256[] memory extend = new uint256[](2);
+        extend[0] = 0x44;
+        extend[1] = 0x55;
+
+        uint256 baseBefore = Pointer.unwrap(LibUint256Array.startPointer(base));
+        uint256 extendBefore = Pointer.unwrap(LibUint256Array.startPointer(extend));
+        uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 2, "length");
+        assertEq(extended[0], 0x44, "0");
+        assertEq(extended[1], 0x55, "1");
+        assertNotEq(baseBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "allocate path not taken");
+        assertNotEq(extendBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "aliases extend");
+    }
+
+    /// Both arrays empty. Nothing is copied and the result is empty. The inline
+    /// path returns the pointer it was given.
+    function testExtendInlineBothEmptyKeepsBasePointer() public pure {
+        uint256[] memory extend = new uint256[](0);
+
+        // Allocated last, so base is the most recent allocation.
+        uint256[] memory base = new uint256[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibUint256Array.startPointer(base));
+        uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 0, "length");
+        assertEq(baseBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "inline path not taken");
+    }
+
+    /// The allocating counterpart of the case above. Empty in, empty out, and
+    /// still a fresh region aliasing neither input.
+    function testExtendAllocateBothEmptyAllocatesFreshRegion() public pure {
+        uint256[] memory base = new uint256[](0);
+
+        // Allocated after base, so base is no longer the most recent
+        // allocation.
+        uint256[] memory extend = new uint256[](0);
+
+        uint256 baseBefore = Pointer.unwrap(LibUint256Array.startPointer(base));
+        uint256 extendBefore = Pointer.unwrap(LibUint256Array.startPointer(extend));
+        uint256[] memory extended = LibUint256Array.unsafeExtend(base, extend);
+
+        assertEq(extended.length, 0, "length");
+        assertNotEq(baseBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "allocate path not taken");
+        assertNotEq(extendBefore, Pointer.unwrap(LibUint256Array.startPointer(extended)), "aliases extend");
+    }
+
     function testExtendAllocateDebug() public pure {
         uint256[] memory a = new uint256[](3);
         uint256[] memory b = new uint256[](4);

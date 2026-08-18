@@ -214,17 +214,20 @@ contract LibArraySelfExtendTest is Test {
     }
 
     function testSelfExtendBytes32DoublesTheContents() external pure {
-        bytes32[] memory a = new bytes32[](2);
-        a[0] = bytes32(uint256(0xAA));
-        a[1] = bytes32(uint256(0xBB));
+        bytes32[] memory a = new bytes32[](3);
+        a[0] = bytes32(uint256(0x11));
+        a[1] = bytes32(uint256(0x22));
+        a[2] = bytes32(uint256(0x33));
 
         bytes32[] memory extended = a.unsafeExtend(a);
 
-        assertEq(extended.length, 4);
-        assertEq(extended[0], bytes32(uint256(0xAA)));
-        assertEq(extended[1], bytes32(uint256(0xBB)));
-        assertEq(extended[2], bytes32(uint256(0xAA)));
-        assertEq(extended[3], bytes32(uint256(0xBB)));
+        assertEq(extended.length, 6);
+        assertEq(extended[0], bytes32(uint256(0x11)));
+        assertEq(extended[1], bytes32(uint256(0x22)));
+        assertEq(extended[2], bytes32(uint256(0x33)));
+        assertEq(extended[3], bytes32(uint256(0x11)));
+        assertEq(extended[4], bytes32(uint256(0x22)));
+        assertEq(extended[5], bytes32(uint256(0x33)));
     }
 
     function testSelfExtendBytes32AllocatesExactly() external pure {

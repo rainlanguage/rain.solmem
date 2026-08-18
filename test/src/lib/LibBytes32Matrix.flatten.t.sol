@@ -3,10 +3,13 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
+import {LibBytes32Array} from "../../../src/lib/LibBytes32Array.sol";
 import {LibBytes32Matrix} from "../../../src/lib/LibBytes32Matrix.sol";
+import {LibPointer, Pointer} from "../../../src/lib/LibPointer.sol";
 import {LibBytes32MatrixSlow} from "../../lib/LibBytes32MatrixSlow.sol";
 
 contract LibBytes32MatrixFlattenTest is Test {
+    using LibBytes32Array for bytes32[];
     using LibBytes32Matrix for bytes32[][];
 
     function checkFlatten(bytes32[][] memory matrix, bytes32[] memory expected) internal pure {
@@ -277,5 +280,66 @@ contract LibBytes32MatrixFlattenTest is Test {
     /// forge-config: default.fuzz.runs = 100
     function testFlattenReference(bytes32[][] memory matrix) external pure {
         checkFlatten(matrix, LibBytes32MatrixSlow.flattenSlow(matrix));
+    }
+
+    /// `matrixFrom` stores the pointers it is handed, so one sub array can
+    /// appear more than once. Every appearance is copied out in order and the
+    /// shared source is left intact. ABI decoding allocates a fresh sub array
+    /// per element, so `testFlattenReference` never builds this shape, and this
+    /// is the only case that flattens a matrix built by `matrixFrom`.
+    function testFlattenAliasedInnerArrays() external pure {
+        bytes32[] memory a = LibBytes32Array.arrayFrom(bytes32(uint256(0x11)), bytes32(uint256(0x22)));
+        bytes32[][] memory matrix = LibBytes32Matrix.matrixFrom(a, a, a);
+
+        bytes32[] memory flattened = matrix.flatten();
+        // Read the free memory pointer BEFORE any assertion, because assertions
+        // allocate and would move it.
+        uint256 fmpAfter = uint256(Pointer.unwrap(LibPointer.allocatedMemoryPointer()));
+        uint256 endOfFlattened = uint256(Pointer.unwrap(flattened.endPointer()));
+
+        assertEq(flattened.length, 6, "length");
+        for (uint256 i = 0; i < 3; i++) {
+            assertEq(flattened[i * 2], bytes32(uint256(0x11)), "even");
+            assertEq(flattened[(i * 2) + 1], bytes32(uint256(0x22)), "odd");
+        }
+        assertEq(fmpAfter, endOfFlattened, "fmp");
+        assertEq(a.length, 2, "source length");
+        assertEq(a[0], bytes32(uint256(0x11)), "source 0");
+        assertEq(a[1], bytes32(uint256(0x22)), "source 1");
+    }
+
+    /// `flatten` writes only within its own allocation, so the matrix and its
+    /// sub arrays read back unchanged. No case above sees this: `checkFlatten`
+    /// only reads the result, and `testFlattenReference` captures its expected
+    /// array from the pristine matrix before `flatten` runs.
+    function testFlattenLeavesSourceUnmodified() external pure {
+        bytes32[] memory a = LibBytes32Array.arrayFrom(bytes32(uint256(0x11)), bytes32(uint256(0x22)));
+        bytes32[] memory b = LibBytes32Array.arrayFrom(bytes32(uint256(0x33)));
+        bytes32[][] memory matrix = LibBytes32Matrix.matrixFrom(a, b);
+
+        matrix.flatten();
+
+        assertEq(matrix.length, 2, "outer length");
+        assertEq(matrix[0].length, 2, "sub 0 length");
+        assertEq(matrix[0][0], bytes32(uint256(0x11)), "sub 0 item 0");
+        assertEq(matrix[0][1], bytes32(uint256(0x22)), "sub 0 item 1");
+        assertEq(matrix[1].length, 1, "sub 1 length");
+        assertEq(matrix[1][0], bytes32(uint256(0x33)), "sub 1 item 0");
+    }
+
+    /// `testFlattenLeavesSourceUnmodified` over the shapes the fuzzer reaches.
+    /// forge-config: default.fuzz.runs = 100
+    function testFlattenLeavesSourceUnmodifiedFuzz(bytes32[][] memory matrix) external pure {
+        bytes32[][] memory snapshot = new bytes32[][](matrix.length);
+        for (uint256 i = 0; i < matrix.length; i++) {
+            snapshot[i] = new bytes32[](matrix[i].length);
+            for (uint256 j = 0; j < matrix[i].length; j++) {
+                snapshot[i][j] = matrix[i][j];
+            }
+        }
+
+        matrix.flatten();
+
+        assertTrue(LibBytes32MatrixSlow.compareMatrices(matrix, snapshot, snapshot.length), "source unmodified");
     }
 }

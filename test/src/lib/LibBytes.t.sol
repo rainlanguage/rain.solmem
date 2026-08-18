@@ -3,7 +3,8 @@
 pragma solidity =0.8.25;
 
 import {Test} from "forge-std-1.16.1/src/Test.sol";
-import {LibBytes, TruncateError} from "../../../src/lib/LibBytes.sol";
+import {LibBytes} from "../../../src/lib/LibBytes.sol";
+import {OutOfBoundsTruncate} from "../../../src/error/ErrTruncate.sol";
 import {LibPointer, Pointer, LibMemCpy} from "../../../src/lib/LibMemCpy.sol";
 
 contract LibBytesTest is Test {
@@ -23,7 +24,7 @@ contract LibBytesTest is Test {
 
     function testTruncateError(bytes memory data, uint256 length) public {
         vm.assume(data.length < length);
-        vm.expectRevert(abi.encodeWithSelector(TruncateError.selector, data.length, length));
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, data.length, length));
         this.truncateExternal(data, length);
     }
 
@@ -133,7 +134,7 @@ contract LibBytesTest is Test {
     /// Truncating to one byte longer than the current length reverts.
     function testTruncateOneTooLongExact() public {
         bytes memory data = hex"0102030405";
-        vm.expectRevert(abi.encodeWithSelector(TruncateError.selector, 5, 6));
+        vm.expectRevert(abi.encodeWithSelector(OutOfBoundsTruncate.selector, 5, 6));
         this.truncateExternal(data, 6);
     }
 }
