@@ -59,7 +59,8 @@ contract LibUint256ArrayTruncateTest is Test {
     }
 
     /// `array.length` is the largest ACCEPTED length — the other side of the
-    /// bound — and truncating to it is a no-op that retains every item.
+    /// bound — and truncating to it is a no-op that neither allocates nor
+    /// disturbs any item.
     function testTruncateToOwnLengthAccepted(uint256[] memory a) public pure {
         uint256 length = a.length;
         uint256[] memory b = new uint256[](length);
@@ -67,7 +68,10 @@ contract LibUint256ArrayTruncateTest is Test {
             b[i] = a[i];
         }
 
+        Pointer allocatedBefore = LibPointer.allocatedMemoryPointer();
         LibUint256Array.truncate(a, length);
+        Pointer allocatedAfter = LibPointer.allocatedMemoryPointer();
+        assertEq(Pointer.unwrap(allocatedBefore), Pointer.unwrap(allocatedAfter), "truncate allocated");
 
         assertEq(a.length, length, "length");
         assertEq(a, b);
