@@ -21,14 +21,11 @@ bounds access, double-frees, and aliasing are the caller's responsibility.
 
 ## Requirements
 
-- **solc.** Every source file declares `pragma solidity ^0.8.25;`.
-- **Cancun.** Build with `evm_version = "cancun"` or later, and deploy only to
-  chains that have activated cancun. Every copy path compiles to the `mcopy`
-  opcode: `LibMemCpy`, `LibUint256Array`/`LibBytes32Array` and
-  `LibUint256Matrix`/`LibBytes32Matrix`. A pre-cancun `evm_version` fails at
-  compile time. Cancun bytecode on a chain that has not activated cancun reverts
-  with `invalid opcode` at runtime, in every copy, extend, flatten and
-  `matrixFrom` path.
+- **solc `^0.8.25`**, which every source file declares.
+- **`evm_version = "cancun"` or later, and a chain with cancun activated.**
+  Every copy path compiles to the `mcopy` opcode. Building below cancun fails at
+  compile time; cancun bytecode on a chain without cancun reverts with
+  `invalid opcode` at runtime.
 
 ## Install
 
