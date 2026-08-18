@@ -7,6 +7,7 @@ path = [
   "audit/**/",
   ".audit/**",
   ".gitignore",
+  "CHANGELOG.md",
   "README.md",
   "flake.lock",
   "flake.nix",
