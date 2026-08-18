@@ -310,9 +310,9 @@ contract LibUint256MatrixFlattenTest is Test {
     }
 
     /// `flatten` writes only within its own allocation, so the matrix and its
-    /// sub arrays read back unchanged. `checkFlatten` cannot see this: at every
-    /// call site `flattenSlow` captures the expected array from the pristine
-    /// matrix before `flatten` runs.
+    /// sub arrays read back unchanged. No case above sees this: `checkFlatten`
+    /// only reads the result, and `testFlattenReference` captures its expected
+    /// array from the pristine matrix before `flatten` runs.
     function testFlattenLeavesSourceUnmodified() external pure {
         uint256[] memory a = LibUint256Array.arrayFrom(0x11, 0x22);
         uint256[] memory b = LibUint256Array.arrayFrom(0x33);

@@ -310,9 +310,9 @@ contract LibBytes32MatrixFlattenTest is Test {
     }
 
     /// `flatten` writes only within its own allocation, so the matrix and its
-    /// sub arrays read back unchanged. `checkFlatten` cannot see this: at every
-    /// call site `flattenSlow` captures the expected array from the pristine
-    /// matrix before `flatten` runs.
+    /// sub arrays read back unchanged. No case above sees this: `checkFlatten`
+    /// only reads the result, and `testFlattenReference` captures its expected
+    /// array from the pristine matrix before `flatten` runs.
     function testFlattenLeavesSourceUnmodified() external pure {
         bytes32[] memory a = LibBytes32Array.arrayFrom(bytes32(uint256(0x11)), bytes32(uint256(0x22)));
         bytes32[] memory b = LibBytes32Array.arrayFrom(bytes32(uint256(0x33)));
