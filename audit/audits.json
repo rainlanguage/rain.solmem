@@ -1,0 +1,24 @@
+[
+  {
+    "auditor": "Protofire",
+    "report": "audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf",
+    "reviews": [
+      { "date": "2026-01-13", "commit": "228b35c6725877e7fbcd2432b4c692357f16f510" },
+      { "date": "2026-01-26", "commit": "26bce6197383f193e35326bab4d4424cf6eafde7" }
+    ],
+    "scope": [
+      "src/error/ErrBytes.sol",
+      "src/error/ErrStackPointer.sol",
+      "src/error/ErrUint256Array.sol",
+      "src/lib/LibBytes.sol",
+      "src/lib/LibBytes32Array.sol",
+      "src/lib/LibBytes32Matrix.sol",
+      "src/lib/LibMemCpy.sol",
+      "src/lib/LibPointer.sol",
+      "src/lib/LibStackPointer.sol",
+      "src/lib/LibStackSentinel.sol",
+      "src/lib/LibUint256Array.sol",
+      "src/lib/LibUint256Matrix.sol"
+    ]
+  }
+]

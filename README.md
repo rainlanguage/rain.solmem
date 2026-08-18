@@ -68,6 +68,23 @@ silent pointer wraparound, and aliasing.
   compile time; cancun bytecode on a chain without cancun reverts with
   `invalid opcode` at runtime.
 
+## Audit
+
+Protofire reviewed rain.solmem in January 2026. The
+[report](audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf)
+covers two reviews — `228b35c6` on the 13th and `26bce619` on the 26th, the
+latter being the end of the audited tree. Scope was the twelve contracts listed
+in [`audit/audits.json`](audit/audits.json), which were all of `src/` at those
+commits.
+
+`src/` today is not that tree: some of the audited files have since been
+deleted, and some of what is there now the audit never saw. To see how far it
+has moved:
+
+```sh
+git diff --stat 26bce6197383f193e35326bab4d4424cf6eafde7..HEAD -- src/
+```
+
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):
