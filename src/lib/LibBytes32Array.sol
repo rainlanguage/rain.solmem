@@ -315,7 +315,9 @@ library LibBytes32Array {
     /// optimisation reasons. To use this function safely THE CALLER MUST NOT USE
     /// THE BASE ARRAY AND MUST USE THE RETURNED ARRAY ONLY. It is safe to use
     /// the extend array after calling this function as it is never mutated, it
-    /// is only copied from.
+    /// is only copied from. Extending an array by itself therefore always
+    /// allocates, as the in place path would rewrite the length word that base
+    /// and extend share.
     ///
     /// @param b The base integer array that will be extended by `e`.
     /// @param e The extend integer array that extends `b`.
@@ -331,9 +333,16 @@ library LibBytes32Array {
                 let baseLength := mload(base)
                 let baseEnd := add(base, add(0x20, mul(baseLength, 0x20)))
 
-                // If base is NOT the last thing in allocated memory, allocate,
-                // copy and recurse.
-                switch eq(outputCursor, baseEnd)
+                // The in place path rewrites base's length word where it sits,
+                // and when extend IS base that word is also extend's length
+                // word, so the write would mutate extend. The in place path is
+                // therefore only taken when base is the last thing in allocated
+                // memory AND extend is a different array. Otherwise allocate,
+                // copy and recurse. The copy puts base above every existing
+                // allocation, where it is both the last allocation and distinct
+                // from extend, so the recursion is one deep and lands on the in
+                // place path.
+                switch and(eq(outputCursor, baseEnd), iszero(eq(base, extend)))
                 case 0 {
                     let newBase := outputCursor
                     // Base size includes the length word and is in bytes.
@@ -345,11 +354,9 @@ library LibBytes32Array {
                     baseAfter := extendInline(newBase, extend)
                 }
                 case 1 {
-                    // Read the extend length ONCE, before base's length word is
-                    // overwritten. When extend aliases base they are the same
-                    // word, so re-reading it after the write yields the already
-                    // combined length and the copy runs past the free memory
-                    // pointer.
+                    // The extend length is read ONCE, before base's length word
+                    // is overwritten, so the copy size never depends on the
+                    // order of the read and the write.
                     let extendLength := mload(extend)
                     let totalLength := add(baseLength, extendLength)
                     let outputEnd := add(base, add(0x20, mul(totalLength, 0x20)))
