@@ -8,7 +8,6 @@ import {LibUint256MatrixSlow} from "../../lib/LibUint256MatrixSlow.sol";
 
 contract LibUint256MatrixFlattenTest is Test {
     using LibUint256Matrix for uint256[][];
-    using LibUint256MatrixSlow for uint256[][];
 
     function checkFlatten(uint256[][] memory matrix, uint256[] memory expected) internal pure {
         uint256[] memory flattened = matrix.flatten();

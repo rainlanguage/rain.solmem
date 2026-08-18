@@ -8,7 +8,6 @@ import {LibBytes32MatrixSlow} from "../../lib/LibBytes32MatrixSlow.sol";
 
 contract LibBytes32MatrixFlattenTest is Test {
     using LibBytes32Matrix for bytes32[][];
-    using LibBytes32MatrixSlow for bytes32[][];
 
     function checkFlatten(bytes32[][] memory matrix, bytes32[] memory expected) internal pure {
         bytes32[] memory flattened = matrix.flatten();
