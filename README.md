@@ -14,7 +14,6 @@ arrays/matrices that don't go through Solidity's safety-checked allocator.
 | `LibBytes32Array`  | Dynamic `bytes32[]` mirror of `LibUint256Array`.                          |
 | `LibUint256Matrix` | `uint256[][]` operations.                                                 |
 | `LibBytes32Matrix` | `bytes32[][]` operations.                                                 |
-| `LibStackPointer`  | Stack-style push/pop on a memory region accessed via `Pointer`.           |
 | `LibStackSentinel` | Sentinel-terminated stack walks for unknown-length data.                  |
 
 These libraries assume the caller knows what they're doing with memory. Out-of-

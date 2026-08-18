@@ -12,8 +12,8 @@ import {LibStackSentinelWrapHarness} from "test/src/lib/LibStackSentinelWrapHarn
 /// For `n = 2**251 + k` the function therefore behaves exactly as if `n = k` had
 /// been requested, and returns successfully.
 ///
-/// Unlike the `unsafeList` site, this function is not prefixed `unsafe`, and it
-/// does not document a single precondition on `n`. The only constraint it
+/// This function is not prefixed `unsafe`, and it does not document a single
+/// precondition on `n`. The only constraint it
 /// states is `n != 0`, and that one IS enforced with `ZeroSentinelTupleSize`.
 /// What it does state, twice, is that a bad `n` fails LOUDLY: the NatSpec says
 /// an underflow "will result in the evm immediately running out of gas", and
