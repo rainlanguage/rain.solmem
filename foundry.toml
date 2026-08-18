@@ -4,7 +4,7 @@
 # ignores; any other unreserved section it reads as a profile and warns about.
 [external.package]
 name = "rain-solmem"
-version = "0.1.21"
+version = "0.1.23"
 
 [profile.default]
 
@@ -19,4 +19,4 @@ fuzz.runs = 2056
 libs = ["dependencies"]
 
 [dependencies]
-forge-std = "1.16.1"
+forge-std = "1.16.2"
