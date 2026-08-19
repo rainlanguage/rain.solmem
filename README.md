@@ -115,12 +115,12 @@ Publishing is merge-driven; there is no release tag to push. On every push to
 `main`, [`Package Release`](.github/workflows/package-release.yaml) calls
 rainix's `rainix-autopublish`, which compares the package content against the
 latest published revision. If it differs, it runs
-`forge soldeer push rain-solmem~<version>`, tags `sol-v<version>`, and commits a
-bump of `[package] version` back to `main`.
+`forge soldeer push rain-solmem~<version>` and tags `sol-v<version>`.
 
-`[package] version` in `foundry.toml` is the **next, unpublished** version, not
-the current one. It is always one ahead of the registry; do not "correct" it to
-match.
+The publish version is derived from the Soldeer registry and git tags, never
+from `foundry.toml`: it is the semver max of a patch bump of the newest
+published version and the newest `next-v<x.y.z>` tag merged into the pushed
+head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump.
 
 Everything [`.soldeerignore`](.soldeerignore) does not exclude ships — `src/**`,
 `README.md`, `LICENSE`, `LICENSES/`, `REUSE.toml` — and any change to it
