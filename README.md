@@ -120,7 +120,7 @@ latest published revision. If it differs, it runs
 The publish version is derived from the Soldeer registry and git tags, never
 from `foundry.toml`: it is the semver max of a patch bump of the newest
 published version and the newest `next-v<x.y.z>` tag merged into the pushed
-head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump.
+head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump; the tag is read only when a push to `main` runs the workflow, so it must already be merged into the pushed head — a tag-only push publishes nothing.
 
 Everything [`.soldeerignore`](.soldeerignore) does not exclude ships — `src/**`,
 `README.md`, `LICENSE`, `LICENSES/`, `REUSE.toml` — and any change to it
