@@ -68,22 +68,6 @@ silent pointer wraparound, and aliasing.
   compile time; cancun bytecode on a chain without cancun reverts with
   `invalid opcode` at runtime.
 
-## Audit
-
-Protofire reviewed rain.solmem in January 2026. The
-[report](audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf)
-covers two reviews — `228b35c6` on the 13th and `26bce619` on the 26th, the
-latter being the end of the audited tree. Scope was all of `src/` at those
-commits, the twelve contracts the report's own scope table lists.
-
-`src/` today is not that tree: some of the audited files have since been
-deleted, and some of what is there now the audit never saw. To see how far it
-has moved:
-
-```sh
-git diff --stat 26bce6197383f193e35326bab4d4424cf6eafde7..HEAD -- src/
-```
-
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):
@@ -120,7 +104,9 @@ latest published revision. If it differs, it runs
 The publish version is derived from the Soldeer registry and git tags, never
 from `foundry.toml`: it is the semver max of a patch bump of the newest
 published version and the newest `next-v<x.y.z>` tag merged into the pushed
-head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump; the tag is read only when a push to `main` runs the workflow, so it must already be merged into the pushed head — a tag-only push publishes nothing.
+head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump;
+the tag is read only when a push to `main` runs the workflow, so it must already
+be merged into the pushed head — a tag-only push publishes nothing.
 
 Everything [`.soldeerignore`](.soldeerignore) does not exclude ships — `src/**`,
 `README.md`, `LICENSE`, `LICENSES/`, `REUSE.toml` — and any change to it
