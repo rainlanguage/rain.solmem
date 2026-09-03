@@ -68,31 +68,6 @@ silent pointer wraparound, and aliasing.
   compile time; cancun bytecode on a chain without cancun reverts with
   `invalid opcode` at runtime.
 
-## Audit
-
-Protofire has reviewed rain.solmem three times. The cumulative
-[report](audit/protofire/rain.solmem.e75080f460876f4070c4e127c8668d778df93e94.aug-2026.pdf)
-(v3.0, August 2026) covers `228b35c6` on 13 January 2026, `26bce619` on 26
-January 2026 and `e75080f4` (tag `sol-v0.1.26`) on 26 August 2026, the latter
-being the end of the audited tree. The
-[January report](audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf)
-is kept as issued.
-
-The report's scope table is the January one. It names `ErrBytes.sol`,
-`ErrUint256Array.sol` and `LibStackPointer.sol`, which do not exist at
-`e75080f4`, and does not name `ErrStackSentinel.sol` or `ErrTruncate.sol`, which
-do. The report does not say which files the August review covered beyond that
-table.
-
-Its three findings (M01, L01, I01) were found at `228b35c6` and fixed at
-`43222a6`, `96955a1` and `9b0de96`, all before the August review.
-
-`src/` at `HEAD` is the audited tree until something under `src/` changes:
-
-```sh
-git diff --stat e75080f460876f4070c4e127c8668d778df93e94..HEAD -- src/
-```
-
 ## Install
 
 Via [soldeer](https://soldeer.xyz) (in your foundry project's root):
