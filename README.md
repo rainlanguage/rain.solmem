@@ -70,18 +70,27 @@ silent pointer wraparound, and aliasing.
 
 ## Audit
 
-Protofire reviewed rain.solmem in January 2026. The
-[report](audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf)
-covers two reviews — `228b35c6` on the 13th and `26bce619` on the 26th, the
-latter being the end of the audited tree. Scope was all of `src/` at those
-commits, the twelve contracts the report's own scope table lists.
+Protofire has reviewed rain.solmem three times. The cumulative
+[report](audit/protofire/rain.solmem.e75080f460876f4070c4e127c8668d778df93e94.aug-2026.pdf)
+(v3.0, August 2026) covers `228b35c6` on 13 January 2026, `26bce619` on 26
+January 2026 and `e75080f4` (tag `sol-v0.1.26`) on 26 August 2026, the latter
+being the end of the audited tree. The
+[January report](audit/protofire/rain.solmem.228b35c6725877e7fbcd2432b4c692357f16f510.jan-2026.pdf)
+is kept as issued.
 
-`src/` today is not that tree: some of the audited files have since been
-deleted, and some of what is there now the audit never saw. To see how far it
-has moved:
+The report's scope table is the January one. It names `ErrBytes.sol`,
+`ErrUint256Array.sol` and `LibStackPointer.sol`, which do not exist at
+`e75080f4`, and does not name `ErrStackSentinel.sol` or `ErrTruncate.sol`, which
+do. The report does not say which files the August review covered beyond that
+table.
+
+Its three findings (M01, L01, I01) were found at `228b35c6` and fixed at
+`43222a6`, `96955a1` and `9b0de96`, all before the August review.
+
+`src/` at `HEAD` is the audited tree until something under `src/` changes:
 
 ```sh
-git diff --stat 26bce6197383f193e35326bab4d4424cf6eafde7..HEAD -- src/
+git diff --stat e75080f460876f4070c4e127c8668d778df93e94..HEAD -- src/
 ```
 
 ## Install
@@ -120,7 +129,9 @@ latest published revision. If it differs, it runs
 The publish version is derived from the Soldeer registry and git tags, never
 from `foundry.toml`: it is the semver max of a patch bump of the newest
 published version and the newest `next-v<x.y.z>` tag merged into the pushed
-head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump; the tag is read only when a push to `main` runs the workflow, so it must already be merged into the pushed head — a tag-only push publishes nothing.
+head. Push a `next-v<x.y.z>` tag to request a deliberate minor or major jump;
+the tag is read only when a push to `main` runs the workflow, so it must already
+be merged into the pushed head — a tag-only push publishes nothing.
 
 Everything [`.soldeerignore`](.soldeerignore) does not exclude ships — `src/**`,
 `README.md`, `LICENSE`, `LICENSES/`, `REUSE.toml` — and any change to it
